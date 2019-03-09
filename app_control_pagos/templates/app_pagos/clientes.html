@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+Administración de clientes
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+  {% if user.is_superuser %}
+  <div class="col-md-3 shadow-sm p-3 mb-5 mr-3 bg-white rounded">
+    <h3>Cliente</h3>
+    <hr>
+
+    {% if id %}
+    <form action="{% url 'pagos:guardar_cliente' id %}" method="post">
+    {% else %}
+    <form action="{% url 'pagos:agregar_cliente' %}" method="post">
+    {% endif %}
+      {% csrf_token %}
+
+      {{ form.as_p }}
+
+      <input type="submit" value="Guardar" class="btn btn-success">
+    </form>
+  </div>
+  {% endif %}
+
+  <div class="col-md-8 shadow-sm p-3 mb-5 bg-white rounded">
+    <h3>Listado de clientes</h3>
+    <hr>
+
+    <table class="table table-sm table-bordered table-font-small">
+      <thead class="thead-dark">
+        <tr>
+          <th>Identidad</th>
+          <th>Nombre</th>
+          <th>Apellido</th>
+          <th>Dirección</th>
+          <th>Teléfonos</th>
+          <th>Correo</th>
+          <th></th>
+        </tr>
+        <tbody>
+          {% for cliente in clientes %}
+          <tr>
+            <td>{{ cliente.identidad }}</td>
+            <td>{{ cliente.nombre }}</td>
+            <td>{{ cliente.apellido }}</td>
+            <td class="text-center"><a href="#" data-toggle="tooltip" data-placement="top" title="{{ cliente.direccion }}">Ver</a></td>
+            <td class="text-left">
+              {% if cliente.telefono1 and cliente.telefono2 %}
+                {{ cliente.telefono1 }} | {{ cliente.telefono2 }}
+              {% elif cliente.telefono1 %}
+                {{ cliente.telefono1 }}
+              {% elif cliente.telefono2 %}
+                {{ cliente.telefono2 }}
+              {% else %}
+                Sin registrar
+              {% endif %}
+            </td>
+            <td>{% if cliente.email %}{{ cliente.email }}{% else %}No tiene{% endif %}</td>
+            <td><a href="{% url 'pagos:editar_cliente' cliente.identidad %}"><i class="fas fa-fw fa-edit"></i></a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </thead>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

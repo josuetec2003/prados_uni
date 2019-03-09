@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+Registrar pago
+{% endblock %}
+
+{% block content %}
+
+<div class="jumbotron">
+  <div class="row">
+    <div class="col-md-8 offset-md-2 shadow-sm p-3 bg-white rounded">
+      <select id="cbo-cliente-pago" class="chosen" data-url="{% url 'pagos:obtener_prestamos_cliente' %}">
+        <option value="">Seleccione el cliente</option>
+        {% for cliente in clientes %}
+        <option value="{{ cliente.identidad }}">{{ cliente }}</option>
+        {% endfor %}
+      </select>
+
+      <div id="pagos-a-realizar"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modal-abono" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Contrato #<span id="contrato-num"></span></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <div class="form-group row">
+          <label for="saldo-pendiente" class="col-sm-3 col-form-label">Saldo</label>
+          <div class="col-sm-5">
+            <input type="text" class="form-control" id="saldo-pendiente" readonly="readonly">
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="txt-abono" class="col-sm-3 col-form-label">Abono</label>
+          <div class="col-sm-5">
+            <input type="number" class="form-control" id="txt-abono" placeholder="Valor del abono">
+          </div>
+          <div class="col-sm-4">
+            <button id="btn-recalcular-id" data-url="{% url 'pagos:realizar_abono' %}" class="btn btn-dark btn-block"><small>Recalcular deuda</small></button>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="nueva-deuda" class="col-sm-3 col-form-label">Nueva deuda</label>
+          <div class="col-sm-5">
+            <input type="text" class="form-control" id="nueva-deuda" readonly="readonly">
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <input type="hidden" id="tasa-contrato">
+          <label for="nuevo-plazo" class="col-sm-3 col-form-label">Nuevo plazo</label>
+          <div class="col-sm-5">
+            <input type="number" class="form-control" id="nuevo-plazo">
+          </div>
+          <div class="col-sm-4">
+            <select id="tipo-plazo" class="form-control">
+              <option value="anios">Años</option>
+              <option value="meses">Meses</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group row">
+          <label for="nueva-cuota" class="col-sm-3 col-form-label">Nueva cuota</label>
+          <div class="col-sm-5">
+            <input type="text" class="form-control" id="nueva-cuota" readonly="readonly">
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-nueva-cuota" class="btn btn-secondary" data-dismiss="modal">Calcular nueva cuota</button>
+        <button type="button" data-url="{% url 'pagos:realizar_abono' %}" class="btn btn-primary" id="btn-crear-plan-nuevo">Crear plan de pagos</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}

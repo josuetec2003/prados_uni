@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+Generar cotización
+{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-5 offset-md-3 shadow-sm p-3 mb-5 bg-white rounded">
+    <form action="{% url 'pagos:generar_cotizacion' %}" method="post">
+      {% csrf_token %}
+
+      <label for="cliente">Cliente</label>
+      <input type="text" class="form-control" name="cliente" placeholder="Nombre y apellido" required>
+
+      {{ form }}
+      <br>
+     <input type="submit" class="btn btn-primary" value="Generar contizacion">
+    </form>
+  </div>
+</div>
+{% endblock %}

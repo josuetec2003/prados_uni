@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+Sectores y Lotes
+{% endblock %}
+
+{% load humanize %}
+
+{% block content %}
+
+  <div class="row">
+    <div class="col-md-3 shadow-sm p-3 mb-5 mr-3 bg-white rounded">
+      {% if id %}
+      <form action="{% url 'pagos:actualizar_sector' 'sector' id %}" method="post">
+      {% else %}
+      <form action="{% url 'pagos:guardar_sector' 'sector' %}" method="post">
+      {% endif %}
+          <h3>Agregar sector</h3>
+          <hr>
+
+          {% csrf_token %}
+
+          {{ sector_form.as_p }}
+
+          <input type="submit" class="btn btn-success" value="Agregar">
+      </form>
+
+      <hr>
+
+      <table class="table table-bordered table-sm">
+        <thead class="thead-dark">
+          <tr>
+            <th>Nombre</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {% for sector in sectores %}
+          <tr>
+            <td>
+              <div class="row">
+                <div class="col-8">{{ sector }}</div>
+                <div class="col-4">
+                  <a href="{% url 'pagos:editar_sector' 'sector' sector.id %}"><i class="fas fa-fw fa-edit"></i></a>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-3 shadow-sm p-3 mb-5 mr-3 bg-white rounded">
+      {% if id %}
+      <form action="{% url 'pagos:actualizar_sector' 'lote' id %}" method="post">
+      {% else %}
+      <form action="{% url 'pagos:guardar_sector' 'lote' %}" method="post">
+      {% endif %}
+        <h3>Agregar lote</h3>
+        <hr>
+        {% csrf_token %}
+        {{ lote_form.as_p }}
+
+        <input type="submit" value="Agregar lote" class="btn btn-success">
+      </form>
+    </div>
+    <div class="col-md-5">
+      <h3>Lotes por sector</h3>
+      <hr>
+      {% regroup lotes by sector as lotes_list %}
+
+      {% for sector in lotes_list %}
+      <h5><strong>{{sector.grouper}}</strong></h5>
+      <table class="table table-sm">
+        <thead class="thead-dark">
+          <tr>
+            <th></th>
+            <th>Lote #</th>
+            <th>Precio</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for lote in sector.list %}
+          <tr>
+            <td>
+              {% if lote.estado.descripcion != 'Vendido' %}
+              <a href="{% url 'pagos:editar_sector' 'lote' lote.id %}">
+                <i class="fas fa-fw fa-edit"></i>
+              </a>
+              {% endif %}
+            </td>
+            <td>{{ lote.numero }}</td>
+            <td>L. {{ lote.precio|floatformat:2|intcomma }}</td>
+            <td>{{ lote.estado }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endfor %}
+    </div>
+  </div>
+
+
+{% endblock %}

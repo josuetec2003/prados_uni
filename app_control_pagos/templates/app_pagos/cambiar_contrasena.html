@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+Cambiar contraseña
+{% endblock %}
+
+
+
+{% block content %}
+<style>
+  .errorlist {
+    border: 1px solid #E7DFC6;
+    color: #FD6E0E;
+    border-radius: 3px;
+    background-color: #FFF0CC;
+    padding: 0;
+    margin: 0;
+    font-size: 0.8em;
+    list-style: none;
+  }
+  .errorlist li {
+    padding: 3px;
+    box-sizing: border-box;
+  }
+</style>
+
+<div class="row">
+  <div class="col-md-4 offset-md-4 shadow-sm p-3 mb-5 bg-white rounded">
+    <form action="{% url 'pagos:guardar_nueva_contrasena' %}" method="post">
+      {% csrf_token %}
+      {{ form.as_p }}
+
+      <input type="submit" class="btn btn-success" value="Cambiar la contraseña">
+    </form>
+  </div>
+</div>
+
+
+{% endblock %}

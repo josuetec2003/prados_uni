@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}">
+  <style>
+    .table-font-small {font-size: 0.8em}
+    p {margin-bottom: 0;}
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <a class="btn btn-primary" href="#" onclick="HTMLtoPDF('{{ cliente }}')">Descargar PDF</a>
+    <a class="btn btn-success" href="{% url 'pagos:cotizacion_view' %}">Regresar</a>
+    <hr>
+
+    <div id="HTMLtoPDF">
+      <h1 class="text-center">Prados Universitarios</h1>
+      <h3 class="text-center">Cotización</h3>
+
+      <p class="text-center" style="border-bottom: 1px solid #999">
+        {{ fecha }}
+      </p>
+
+      <p class="text-center">*</p>
+
+      <p>
+        <strong>Cliente:</strong> {{ cliente }} |
+        <strong>Cuota: </strong> {{ cuota }}
+      </p>
+
+      <p>
+         <strong>Tasa: </strong> {{ tasa }}% |
+        <strong>Plazo: </strong> {{ periodo }} año(s) |
+        <strong>Prima: </strong> {{ prima }}
+      </p>
+
+      {{ html|safe }}
+    </div>
+  </div>
+
+  <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'plugins/jspdf.js' %}"></script>
+  <script src="{% static 'plugins/jspdf.plugin.autotable.js' %}"></script>
+  <script src="{% static 'plugins/pdfFromHTML.js' %}"></script>
+</body>
+</html>

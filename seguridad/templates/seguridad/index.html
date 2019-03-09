@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prados Universitarios</title>
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}">
+  <link rel="stylesheet" href="{% static 'bootstrap/css/signin.css' %}">
+  <link rel="shortcut icon" href="{% static 'images/icon.png' %}" >
+</head>
+<body>
+   {% if form.non_field_errors %}
+    <div class='form-errors'>
+        {% for error in form.non_field_errors %}
+            {{ error }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="container">
+      <form class="form-signin" method="post", action="{% url 'log_in' %}?next={{ next }}">
+        {% csrf_token %}
+        <div><img class="mb-4" src="{% static 'images/logo.png' %}" alt="logo" height="100"></div>
+        <h1 class="h3 mb-3 font-weight-normal">Inicie sesión</h1>
+
+        {{ form.username }}
+        {{ form.password }}
+
+        <button class="btn btn-lg btn-success btn-block" type="submit">Iniciar la sesión  </button>
+        <p class="mt-5 mb-3 text-muted">&copy; Prados Universitarios</p>
+      </form>
+    </div>
+
+<script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+<script>
+  $(function () {
+    $('#id_username, #id_password').on('keypress', function () {
+      $('.form-errors').slideUp();
+    })
+  })
+</script>
+</body>
+</html>
+

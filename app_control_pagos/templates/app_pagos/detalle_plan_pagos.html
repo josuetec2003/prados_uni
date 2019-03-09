@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+Plan de pagos | Contrato #{{ plan.contrato.id }}
+{% endblock %}
+
+{% load humanize %}
+
+{% block content %}
+<div class="row">
+  <div class="col-md-4 shadow-sm p-3 mb-5 bg-white rounded mr-3">
+    <div class="row">
+      <div class="col-md-6"><h3 class="mb-3">Información</h3></div>
+      <div class="col-md-6 text-right">
+        <a href="{% url 'pagos:contrato' 'todos' %}" class="btn btn-success btn-sm">← Regresar</a>
+      </div>
+    </div>
+
+    <table class="table table-sm table-font-small">
+      <tr>
+        <td>Cliente</td>
+        <td><strong>{{ contrato.cliente }}</strong></td>
+      </tr>
+      <tr>
+        <td>Fecha adquisición</td>
+        <td><strong>{{ contrato.fecha_adquisicion|date:"m/d/Y" }}</strong></td>
+      </tr>
+
+      <tr>
+        <td>Lote(s)</td>
+        <td>
+          {% for lote in contrato.lotes.all %}
+          <span class="badge badge-light">Lote {{ lote.numero }}, {{ lote.sector }}, L{{ lote.precio|floatformat:2|intcomma }}</span> <br>
+          {% endfor %}
+        </td>
+      </tr>
+
+      <tr>
+        <td>Monto total lotes</td>
+        <td><strong class="text-dark">{{ contrato.monto_total_lotes|floatformat:2|intcomma }}</strong></td>
+      </tr>
+
+      <tr>
+        <td>Prima</td>
+        <td><strong class="text-danger">-L{{ contrato.prima|floatformat:2|intcomma }}</strong></td>
+      </tr>
+      <tr>
+        <td>Monto por pagar</td>
+        <td><strong class="text-success">L{{ contrato.monto_contrato_despues_de_prima|floatformat:2|intcomma }}</strong></td>
+      </tr>
+      <tr>
+        <td>Tasa</td>
+        <td><strong>{{ contrato.tasa }}</strong></td>
+      </tr>
+      <tr>
+        <td>Plazo</td>
+        <td><strong>{{ contrato.periodos }}</strong></td>
+      </tr>
+      <tr>
+        <td>Cuota(s)</td>
+        <td>
+          {% for plan in contrato.planpagos_set.all %}
+          Plan #{{ plan.numero }} → <strong class="text-primary">L{{ plan.cuota|floatformat:2|intcomma }}</strong> <br>
+          {% endfor %}
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="col-md-7 shadow-sm p-3 mb-5 bg-white rounded">
+    <nav>
+      <div class="nav nav-tabs" id="nav-tab" role="tablist">
+
+        <a class="nav-item nav-link active" id="nav-plan-activo-tab"
+           data-toggle="tab" href="#nav-plan-activo" role="tab"
+           aria-controls="nav-plan-activo" aria-selected="true">Plan vigente</a>
+
+        <a class="nav-item nav-link" id="nav-plan-anterior-tab"
+           data-toggle="tab" href="#nav-plan-anterior" role="tab"
+           aria-controls="nav-plan-anterior" aria-selected="false">Planes anteriores</a>
+
+        <a class="nav-item nav-link" id="nav-pagos-contrato-tab"
+           data-toggle="tab" href="#nav-pagos-contrato" role="tab"
+           aria-controls="nav-pagos-contrato" aria-selected="false">Pagos al contrato</a>
+
+      </div>
+    </nav>
+
+    <div class="tab-content mt-3" id="nav-tabContent">
+      <div class="tab-pane fade show active" id="nav-plan-activo" role="tabpanel" aria-labelledby="nav-plan-activo-tab">
+        {% if detalle %}
+        <table class="table table-sm table-bordered table-font-small">
+          <thead class="thead-dark">
+            <tr>
+              <th class="text-center">Cuota</th>
+              <th class="text-center">Fecha máxima pago</th>
+              <th class="text-center">Pago capital</th>
+              <th class="text-center">Pago intereses</th>
+              <th class="text-center">Amortización</th>
+              <th class="text-center">Estado</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% for cuota in detalle %}
+              <tr>
+                <td class="text-center">{{ cuota.numero_cuota }}</td>
+                <td>{{ cuota.fecha_maxima_pago }}</td>
+                <td class="text-right">L{{ cuota.cuota_capital|floatformat:2|intcomma }}</td>
+                <td class="text-right">L{{ cuota.cuota_intereses|floatformat:2|intcomma }}</td>
+                <td class="text-right">L{{ cuota.amortizacion|floatformat:2|intcomma }}</td>
+                <td class="text-center">
+                  {% if cuota.cuota_pagada %}
+                  <span class="badge badge-success">Pagada</span>
+                  {% else %}
+                  <span class="badge badge-danger">Pendiente</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="alert alert-warning" role="alert">
+          El contrato ha finalizado. <br> Más información en <strong>Planes anteriores</strong> o <strong>Pagos al contrato</strong>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="tab-pane fade" id="nav-plan-anterior" role="tabpanel" aria-labelledby="nav-plan-anterior-tab">
+        {% for plan in planes_anteriores %}
+        <div class="alert alert-secondary" role="alert">
+          Plan <strong>#{{ plan.numero }}</strong> -
+          Creado el <strong>{{ plan.fecha_creacion|date:"d/m/Y" }}</strong> -
+          Valor de la cuota: <strong>L{{ plan.cuota|floatformat:2|intcomma }}</strong>
+        </div>
+            <table class="table table-sm table-bordered table-font-small">
+              <thead class="thead-dark">
+                <tr>
+                  <th class="text-center">Cuota</th>
+                  <th class="text-center">Fecha máxima pago</th>
+                  <th class="text-center">Pago capital</th>
+                  <th class="text-center">Pago intereses</th>
+                  <th class="text-center">Amortización</th>
+                  <th class="text-center">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cuota in plan.detalleplanpagos_set.all %}
+                  <tr>
+                    <td class="text-center">{{ cuota.numero_cuota }}</td>
+                    <td>{{ cuota.fecha_maxima_pago }}</td>
+                    <td class="text-right">L{{ cuota.cuota_capital|floatformat:2|intcomma }}</td>
+                    <td class="text-right">L{{ cuota.cuota_intereses|floatformat:2|intcomma }}</td>
+                    <td class="text-right">L{{ cuota.amortizacion|floatformat:2|intcomma }}</td>
+                    <td class="text-center">
+                      {% if cuota.cuota_pagada %}
+                      <span class="badge badge-success">Pagada</span>
+                      {% else %}
+                      <span class="badge badge-danger">Pendiente</span>
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+        {% empty %}
+        No hay planes anteriores
+        {% endfor %}
+      </div>
+
+      <div class="tab-pane fade" id="nav-pagos-contrato" role="tabpanel" aria-labelledby="nav-pagos-contrato-tab">
+        <div class="alert alert-success" role="alert">
+          Monto contabilizado: <strong>L{{ total_contrato|floatformat:2|intcomma }}</strong>
+        </div>
+
+        <table class="table table-bordered table-sm table-font-small">
+          <thead class="thead-dark">
+            <tr>
+              <th>Plan/Contrato</th>
+              <th>Descripción</th>
+              <th>Monto</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Contrato #{{ contrato.id }}</td>
+              <td>Monto de la prima</td>
+              <td class="text-right">L{{ contrato.prima|floatformat:2|intcomma }}</td>
+            </tr>
+            {% for abono in abonos %}
+            <tr>
+              <td>Plan #{{ abono.numero }}</td>
+              <td>Abono a capital</td>
+              <td class="text-right">L{{ abono.abono|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+
+            {% for cuota in cuotas_pagadas %}
+            <tr>
+              <td>Plan #{{ cuota.plan_pagos.numero }}</td>
+              <td>Cuota #{{ cuota.numero_cuota }}</td>
+              <td class="text-right">L{{ cuota.plan_pagos.cuota|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+
+  </div>
+</div>
+{% endblock %}
