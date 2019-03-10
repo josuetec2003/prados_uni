@@ -63,7 +63,11 @@ Contrato de venta
                 </a>
               </td>
               <td class="text-center">
+                {% if contrato.tipo_venta == 'credito' %}
                 <a href="{% url 'pagos:detalle_plan_pagos' contrato.id %}">Ver</a>
+                {% else %}
+                <a href="{% url 'pagos:info_contrato_contado' contrato.id %}">Ver</a>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}
