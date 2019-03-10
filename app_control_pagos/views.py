@@ -11,8 +11,6 @@ from django.template.loader import get_template
 from ast import literal_eval
 from datetime import datetime, timedelta
 import calendar
-from xhtml2pdf import pisa
-from django_xhtml2pdf.utils import pdf_decorator
 
 from .forms import SectorForm, LoteForm, ClienteForm, ContratoForm, MyPasswordChangeForm, CotizacionForm
 
@@ -298,6 +296,8 @@ def realizar_venta(request):
 def detalle_plan_pagos(request, id):
   contrato = Contrato.objects.get(pk=id)
 
+  #return HttpResponse(contrato.prima)
+
   # Plan vigente (si ya se pagó el lote, no habría ninguno)
   try:
     plan = PlanPagos.objects.get(contrato = contrato, estado = True)
@@ -320,8 +320,9 @@ def detalle_plan_pagos(request, id):
 
   if cuotas_pagadas_suma['suma'] and abonos_suma['suma']:
     total_contrato = float(cuotas_pagadas_suma['suma']) + float(abonos_suma['suma'])
-  else:
+  elif cuotas_pagadas_suma['suma']:
     total_contrato = float(cuotas_pagadas_suma['suma'])
+
 
   total_contrato += float(contrato.prima)
 
