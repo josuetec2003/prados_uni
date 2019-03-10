@@ -57,10 +57,10 @@ class Contrato(models.Model):
   fecha_creacion = models.DateTimeField(auto_now_add=True)
   fecha_adquisicion = models.DateTimeField('Fecha adquisición')
   lotes = models.ManyToManyField(Lote)
+  tipo_venta = models.CharField(max_length=7, choices=TIPO_VENTA, null=True, blank=True)
   periodos = models.ForeignKey(Periodo, on_delete=models.CASCADE, null=True, blank=True)
   prima = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
   tasa = models.CharField(max_length=3, null=True, blank=True)
-  tipo_venta = models.CharField(max_length=7, choices=TIPO_VENTA, null=True, blank=True)
   estado = models.BooleanField(default=True)
 
   @property
