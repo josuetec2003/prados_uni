@@ -275,6 +275,8 @@ def realizar_venta(request):
       url_detalle_plan = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
 
     else:
+      url_detalle_plan = reverse('pagos:contrato', args=['contado'])
+
       contrato = Contrato.objects.create(
         cliente = cliente_obj,
         fecha_adquisicion = fecha,
