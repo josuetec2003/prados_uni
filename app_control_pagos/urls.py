@@ -29,6 +29,7 @@ urlpatterns = [
   path('guardar-nueva-contrasena/', views.guardar_nueva_contrasena, name="guardar_nueva_contrasena"),
   path('cotizacion/', views.cotizacion_view, name="cotizacion_view"),
   path('generar-cotizacion/', views.generar_cotizacion, name="generar_cotizacion"),
+  path('info-contrato-contado/<int:id>/', views.info_contrato_contado, name="info_contrato_contado"),
 
 
 ]

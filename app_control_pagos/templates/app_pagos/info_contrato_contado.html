@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title_content %}
+  Contrato de contado
+{% endblock %}
+
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+  <div class="row">
+    <div class="col-md-8 shadow-sm p-3 mb-5 bg-white rounded offset-md-1">
+
+
+      <div class="row">
+        <div id="HTMLtoPDF">
+
+          <div class="col-md-12">
+            <h3>Contrato #{{ id }} - Prados universitarios</h3>
+          <hr>
+            <table class="table table-borderless">
+
+              <tr>
+                <td><strong>Cliente</strong></td>
+                <td>{{ contrato.cliente }}</td>
+              </tr>
+
+              <tr>
+                <td><strong>Fecha adquisición</strong></td>
+                <td>{{ contrato.fecha_adquisicion|date:"d/m/Y" }}</td>
+              </tr>
+
+              <tr>
+                <td><strong>Lote(s)</strong></td>
+<td style="font-size: 10pt">
+{% for lote in contrato.lotes.all %}
+<p>[ Lote #{{ lote.numero }} - L{{ lote.precio|floatformat:2|intcomma }} ] </p>
+{% endfor %}
+</td>
+              </tr>
+
+              <tr>
+                <td><strong>Monto pagado</strong></td>
+                <td>L{{ monto_total_lotes|floatformat:2|intcomma }}</td>
+              </tr>
+            </table>
+
+            <hr>
+
+          </div>
+        </div>
+
+        <div class="col-md-12">
+          <button class="btn btn-success btn-sm" onclick="HTMLtoPDF('contrato_contado')">Generar PDF</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'control_pagos/plugins/jspdf.js' %}"></script>
+<script src="{% static 'control_pagos/plugins/jspdf.plugin.autotable.js' %}"></script>
+<script src="{% static 'control_pagos/plugins/pdfFromHTML.js' %}"></script>
+{% endblock %}

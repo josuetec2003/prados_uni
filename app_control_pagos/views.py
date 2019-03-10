@@ -275,7 +275,6 @@ def realizar_venta(request):
       url_detalle_plan = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
 
     else:
-      url_detalle_plan = reverse('pagos:contrato', args=['contado'])
 
       contrato = Contrato.objects.create(
         cliente = cliente_obj,
@@ -283,6 +282,8 @@ def realizar_venta(request):
         tipo_venta = tipo_venta,
         estado = False
       )
+
+      url_detalle_plan = reverse('pagos:info_contrato_contado', args=[contrato.id])
 
       for lote_id in literal_eval(lotes):
         lote = Lote.objects.get(pk=lote_id)
@@ -786,6 +787,26 @@ def generar_cotizacion(request):
 
 
       return render(request, 'app_pagos/cotizacion_pdf.html', ctx)
+
+def info_contrato_contado(request, id):
+
+  try:
+    contrato = Contrato.objects.get(pk=id)
+    monto_total_lotes = 0
+
+    for lote in contrato.lotes.all():
+      monto_total_lotes += float(lote.precio)
+
+  except:
+    contrato = None
+
+  ctx = {
+    'id': id,
+    'contrato': contrato,
+    'monto_total_lotes': monto_total_lotes
+  }
+
+  return render(request, 'app_pagos/info_contrato_contado.html', ctx)
 
 
 
