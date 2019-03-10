@@ -5,9 +5,9 @@
   <title>Prados Universitarios</title>
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
   {% load static %}
-  <link rel="stylesheet" href="{% static 'bootstrap/css/bootstrap.css' %}">
-  <link rel="stylesheet" href="{% static 'bootstrap/css/signin.css' %}">
-  <link rel="shortcut icon" href="{% static 'images/icon.png' %}" >
+  <link rel="stylesheet" href="{% static 'control_pagos/bootstrap/css/bootstrap.css' %}">
+  <link rel="stylesheet" href="{% static 'control_pagos/bootstrap/css/signin.css' %}">
+  <link rel="shortcut icon" href="{% static 'control_pagos/images/icon.png' %}" >
 </head>
 <body>
    {% if form.non_field_errors %}
@@ -21,7 +21,7 @@
     <div class="container">
       <form class="form-signin" method="post", action="{% url 'log_in' %}?next={{ next }}">
         {% csrf_token %}
-        <div><img class="mb-4" src="{% static 'images/logo.png' %}" alt="logo" height="100"></div>
+        <div><img class="mb-4" src="{% static 'control_pagos/images/logo.png' %}" alt="logo" height="100"></div>
         <h1 class="h3 mb-3 font-weight-normal">Inicie sesión</h1>
 
         {{ form.username }}
@@ -32,7 +32,7 @@
       </form>
     </div>
 
-<script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
+<script src="{% static 'control_pagos/js/jquery-3.3.1.min.js' %}"></script>
 <script>
   $(function () {
     $('#id_username, #id_password').on('keypress', function () {

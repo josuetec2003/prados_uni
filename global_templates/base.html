@@ -13,13 +13,13 @@
   <title>Prados universitarios</title>
 
   <!-- Custom fonts for this template-->
-  <link href="{% static 'vendor/fontawesome-free/css/all.min.css' %} " rel="stylesheet">
+  <link href="{% static 'control_pagos/vendor/fontawesome-free/css/all.min.css' %} " rel="stylesheet">
 
   <!-- Custom styles for this template-->
-  <link href="{% static 'bootstrap/css/bootstrap.css' %}" rel="stylesheet">
-  <link href="{% static 'bootstrap/css/sb-admin-2.css' %}" rel="stylesheet">
+  <link href="{% static 'control_pagos/bootstrap/css/bootstrap.css' %}" rel="stylesheet">
+  <link href="{% static 'control_pagos/bootstrap/css/sb-admin-2.css' %}" rel="stylesheet">
 
-  <link href="{% static 'jquery-ui/css/chosen.min.css' %}" rel="stylesheet">
+  <link href="{% static 'control_pagos/jquery-ui/css/chosen.min.css' %}" rel="stylesheet">
 
   <link rel="shortcut icon" href="" >
 
@@ -67,54 +67,66 @@
 
       <!-- Divider -->
 
-      {% if user.is_superuser %}
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'pagos:registrar_pago' %}">
-          <i class="fas fa-fw fa-cash-register"></i>
-          <span>Registrar pagos</span>
-        </a>
-      </li>
+      {% if user.is_authenticated %}
+
+
+
+        {% if user.is_superuser %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pagos:registrar_pago' %}">
+            <i class="fas fa-fw fa-cash-register"></i>
+            <span>Registrar pagos</span>
+          </a>
+        </li>
+        {% endif %}
+
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pagos:contrato' 'todos' %}">
+            <i class="fas fa-fw fa-file-alt"></i>
+            <span>Contratos</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pagos:cotizacion_view' %}">
+            <i class="fas fa-fw fa-scroll"></i>
+            <span>Cotización</span>
+          </a>
+        </li>
+
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pagos:pagos_del_mes' %}">
+            <i class="fas fa-fw fa-dollar-sign"></i>
+            <span>Pagos del mes</span>
+          </a>
+        </li>
+
+        {% if user.is_superuser %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pagos:lotes' %}">
+            <i class="fas fa-fw fa-map-signs"></i>
+            <span>Lotes</span>
+          </a>
+        </li>
+        {% endif %}
+
+
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'pagos:clientes' %}">
+            <i class="fas fa-fw fa-users"></i>
+            <span>Clientes</span>
+          </a>
+        </li>
+      {% else %}
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'index' %}">
+            <i class="fas fa-fw fa-user"></i>
+            <span>Iniciar sesión</span>
+          </a>
+        </li>
       {% endif %}
-
-
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'pagos:contrato' 'todos' %}">
-          <i class="fas fa-fw fa-file-alt"></i>
-          <span>Contratos</span>
-        </a>
-      </li>
-
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'pagos:cotizacion_view' %}">
-          <i class="fas fa-fw fa-scroll"></i>
-          <span>Cotización</span>
-        </a>
-      </li>
-
-
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'pagos:pagos_del_mes' %}">
-          <i class="fas fa-fw fa-dollar-sign"></i>
-          <span>Pagos del mes</span>
-        </a>
-      </li>
-
-      {% if user.is_superuser %}
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'pagos:lotes' %}">
-          <i class="fas fa-fw fa-map-signs"></i>
-          <span>Lotes</span>
-        </a>
-      </li>
-      {% endif %}
-
-
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'pagos:clientes' %}">
-          <i class="fas fa-fw fa-users"></i>
-          <span>Clientes</span>
-        </a>
-      </li>
 
 
       <!-- Divider -->
@@ -240,7 +252,7 @@
             <li class="nav-item dropdown no-arrow">
               <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">{{ user.get_full_name }}</span>
-                <img class="img-profile rounded-circle" src="{% static 'images/avatar.png' %}">
+                <img class="img-profile rounded-circle" src="{% static 'control_pagos/images/avatar.png' %}">
               </a>
               <!-- Dropdown - User Information -->
               <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -308,23 +320,23 @@
 
 
   <!-- Bootstrap core JavaScript-->
-  <script src="{% static 'js/jquery-3.3.1.min.js' %}"></script>
-  <script src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'control_pagos/js/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'control_pagos/vendor/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 
   <!-- Core plugin JavaScript-->
-  <script src="{% static 'vendor/jquery-easing/jquery.easing.min.js' %}"></script>
+  <script src="{% static 'control_pagos/vendor/jquery-easing/jquery.easing.min.js' %}"></script>
 
   <!-- Custom scripts for all pages-->
-  <script src="{% static 'js/sb-admin-2.min.js' %}"></script>
-  <script src="{% static 'js/notify.min.js' %}"></script>
+  <script src="{% static 'control_pagos/js/sb-admin-2.min.js' %}"></script>
+  <script src="{% static 'control_pagos/js/notify.min.js' %}"></script>
 
-  <script src="{% static 'jquery-ui/js/chosen.jquery.min.js' %}"></script>
-  <script src="{% static 'plugins/jquery.mask.js' %}"></script>
+  <script src="{% static 'control_pagos/jquery-ui/js/chosen.jquery.min.js' %}"></script>
+  <script src="{% static 'control_pagos/plugins/jquery.mask.js' %}"></script>
 
   {% block js %}
   {% endblock %}
 
-  <script src="{% static 'js/prados.js' %}"></script>
+  <script src="{% static 'control_pagos/js/prados.js' %}"></script>
 
 
 </body>
