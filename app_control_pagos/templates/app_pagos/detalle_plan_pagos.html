@@ -57,10 +57,14 @@ Plan de pagos | Contrato #{{ plan.contrato.id }}
         <td><strong>{{ contrato.periodos }}</strong></td>
       </tr>
       <tr>
-        <td>Cuota(s)</td>
+        <td>Cuota por plan</td>
         <td>
           {% for plan in contrato.planpagos_set.all %}
-          Plan #{{ plan.numero }} → <strong class="text-primary">L{{ plan.cuota|floatformat:2|intcomma }}</strong> <br>
+          Plan #{{ plan.numero }} → <strong class="text-primary">L{{ plan.cuota|floatformat:2|intcomma }}</strong>
+          {% if plan.estado %}
+            <strong class="text-danger">←</strong>
+          {% endif %}
+          <br>
           {% endfor %}
         </td>
       </tr>
