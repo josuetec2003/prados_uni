@@ -538,10 +538,16 @@ def pagos_del_mes(request):
   total_mes_cuotas = DetallePlanPagos.objects.filter(fecha_pago__month = mes, fecha_pago__year = anio).aggregate(suma = Sum('plan_pagos__cuota'))
   total_mes_abonos = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False).aggregate(suma = Sum('abono'))
 
-  if total_mes_primas['suma'] and total_mes_cuotas['suma'] and total_mes_abonos['suma']:
-    total_cuotas_primas = float(total_mes_primas['suma']) + float(total_mes_cuotas['suma']) + float(total_mes_abonos['suma'])
-  else:
-    total_cuotas_primas = 0
+  total_cuotas_primas = 0
+
+  if total_mes_primas['suma']:
+    total_cuotas_primas += float(total_mes_primas['suma'])
+
+  if total_mes_cuotas['suma']:
+    total_cuotas_primas += float(total_mes_cuotas['suma'])
+
+  if total_mes_abonos['suma']:
+    total_cuotas_primas += float(total_mes_abonos['suma'])
 
   ctx = {
     'anios': anios,
