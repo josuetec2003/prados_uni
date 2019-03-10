@@ -532,14 +532,16 @@ def pagos_del_mes(request):
     mes = datetime.now().month
     anio = datetime.now().year
 
-  primas_mes = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio)
+  primas_mes = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'credito')
   pagos_mes = DetallePlanPagos.objects.filter(fecha_pago__month = mes, fecha_pago__year = anio).order_by('-fecha_pago')
   abonos_mes = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False).order_by('-fecha_creacion')
-
+  contratos_contado = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'contado')
 
   total_mes_primas = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio).aggregate(suma = Sum('prima'))
   total_mes_cuotas = DetallePlanPagos.objects.filter(fecha_pago__month = mes, fecha_pago__year = anio).aggregate(suma = Sum('plan_pagos__cuota'))
   total_mes_abonos = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False).aggregate(suma = Sum('abono'))
+  total_contratos_contado = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'contado').aggregate(suma = Sum('lotes__precio'))
+
 
   total_cuotas_primas = 0
 
@@ -552,6 +554,9 @@ def pagos_del_mes(request):
   if total_mes_abonos['suma']:
     total_cuotas_primas += float(total_mes_abonos['suma'])
 
+  if total_contratos_contado['suma']:
+    total_cuotas_primas += float(total_contratos_contado['suma'])
+
   ctx = {
     'anios': anios,
     'aniovar': anio,
@@ -559,7 +564,8 @@ def pagos_del_mes(request):
     'pagos_mes': pagos_mes,
     'primas_mes': primas_mes,
     'abonos_mes': abonos_mes,
-    'total_mes': total_cuotas_primas
+    'total_mes': total_cuotas_primas,
+    'contratos_contado': contratos_contado
   }
 
   return render(request, 'app_pagos/pagos_del_mes.html', ctx)

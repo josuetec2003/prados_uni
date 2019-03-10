@@ -75,17 +75,17 @@ Pagos registrados por mes
         {% endfor %}
 
 
-        {% for prima in primas_mes %}
-        <tr>
-          <td>{{ prima.cliente }}</td>
-          <td><a href="{% url 'pagos:detalle_plan_pagos' prima.id %}">Contrato #{{ prima.id }}</a></td>
-          <td class="text-center">Pago de prima</td>
-          <td class="text-right text-success"><strong>L{{ prima.prima|floatformat:2|intcomma }}</strong></td>
-        </tr>
+        {% for contrato in primas_mes %}
+          <tr>
+            <td>{{ contrato.cliente }}</td>
+            <td><a href="{% url 'pagos:detalle_plan_pagos' contrato.id %}">Contrato #{{ contrato.id }}</a></td>
+            <td class="text-center">Pago de prima</td>
+            <td class="text-right text-success"><strong>L{{ contrato.prima|floatformat:2|intcomma }}</strong></td>
+          </tr>
         {% empty %}
-        <tr>
-          <td colspan="4">No hay primas pagadas en este mes</td>
-        </tr>
+          <tr>
+            <td colspan="4">No hay primas pagadas en este mes</td>
+          </tr>
         {% endfor %}
 
 
@@ -95,6 +95,23 @@ Pagos registrados por mes
           <td><a href="{% url 'pagos:detalle_plan_pagos' pago.plan_pagos.contrato.id %}">Contrato #{{ pago.plan_pagos.contrato.id }}</a></td>
           <td class="text-center">Pago de cuota #{{ pago.numero_cuota }}</td>
           <td class="text-right text-primary">L{{ pago.plan_pagos.cuota|floatformat:2|intcomma }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4">No hay pagos registrados en esta fecha</td>
+        </tr>
+        {% endfor %}
+
+        {% for contrato in contratos_contado  %}
+        <tr>
+          <td>{{ contrato.cliente }}</td>
+          <td><a href="{% url 'pagos:detalle_plan_pagos' contrato.id %}">Contrato #{{ contrato.id }}</a></td>
+          <td class="text-center">Compra al contado</td>
+          <td class="text-right text-primary">
+            {% for l in contrato.lotes.all %}
+            Lote #{{ l.numero }} → {{ l.precio|floatformat:2|intcomma }} <br>
+            {% endfor %}
+          </td>
         </tr>
         {% empty %}
         <tr>
