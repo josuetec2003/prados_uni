@@ -309,6 +309,12 @@ def detalle_plan_pagos(request, id):
     plan = None
     detalle = None
 
+  try:
+    plan_saldo_cancelado = PlanPagos.objects.get(contrato = contrato, estado = False, saldo_restante_cancelado = True)
+  except:
+    plan_saldo_cancelado = None
+
+
   # Planes anteriores
   planes_anteriores = PlanPagos.objects.filter(contrato = contrato, estado = False).order_by('-fecha_creacion')
 
@@ -318,6 +324,8 @@ def detalle_plan_pagos(request, id):
 
   cuotas_pagadas_suma = DetallePlanPagos.objects.filter(cuota_pagada = True, plan_pagos__contrato = contrato).aggregate(suma = Sum('plan_pagos__cuota'))
   abonos_suma = PlanPagos.objects.filter(contrato = contrato, abono__isnull = False).aggregate(suma = Sum('abono'))
+
+
 
   total_contrato = 0
 
@@ -329,6 +337,9 @@ def detalle_plan_pagos(request, id):
 
   total_contrato += float(contrato.prima)
 
+  if plan_saldo_cancelado:
+    total_contrato += float(plan_saldo_cancelado.monto_saldo_cancelado)
+
   ctx = {
     'plan': plan,
     'detalle': detalle,
@@ -336,7 +347,8 @@ def detalle_plan_pagos(request, id):
     'cuotas_pagadas': cuotas_pagadas,
     'abonos': abonos,
     'contrato': contrato,
-    'total_contrato': total_contrato
+    'total_contrato': total_contrato,
+    'plan_saldo_cancelado': plan_saldo_cancelado
   }
 
   return render(request, 'app_pagos/detalle_plan_pagos.html', ctx)
@@ -367,61 +379,62 @@ def obtener_prestamos_cliente(request):
     for contrato in contratos:
       lotes = ''
       fecha_pago = ''
-      plan = PlanPagos.objects.get(contrato=contrato, estado=True)
-      cuota_a_pagar = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=False).order_by('numero_cuota').first()
 
-      # si el plan es nuevo, no tendrá ultima cuota pagada, por lo tanto la variable quedará nula.
-      # en este caso hay que obtener el valor de la deuda para mostrarla
-      ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
+      try:
+        plan = PlanPagos.objects.get(contrato=contrato, estado=True)
+        cuota_a_pagar = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=False).order_by('numero_cuota').first()
 
-      saldo_amortizacion = None
+        # si el plan es nuevo, no tendrá ultima cuota pagada, por lo tanto la variable quedará nula.
+        # en este caso hay que obtener el valor de la deuda para mostrarla
+        ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
 
-      if not ultima_cuota_pagada:
-        if not plan.saldo_deuda:
-          saldo_amortizacion = plan.contrato.monto_contrato_despues_de_prima
+        saldo_amortizacion = None
+
+        if not ultima_cuota_pagada:
+          if not plan.saldo_deuda:
+            saldo_amortizacion = plan.contrato.monto_contrato_despues_de_prima
+          else:
+            saldo_amortizacion = plan.saldo_deuda
         else:
-          saldo_amortizacion = plan.saldo_deuda
-      else:
-        saldo_amortizacion = ultima_cuota_pagada.amortizacion
+          saldo_amortizacion = ultima_cuota_pagada.amortizacion
 
 
+        url_procesar_pago = reverse('pagos:procesar_pago_cuota')
+        url_realizar_abono = reverse('pagos:realizar_abono')
 
+        # ya que no se puede comparar date (fecha maxima pago) con datetime (fecha de hoy)
+        fecha_maxima_pago = datetime.combine(cuota_a_pagar.fecha_maxima_pago, datetime.min.time())
+        if hoy < fecha_maxima_pago:
+          fecha_pago += 'Fecha máxima de pago: <span class="text-success"><strong>{}</strong></span><br>'.format(cuota_a_pagar.fecha_maxima_pago.strftime('%d/%m/%Y'))
+        else:
+          fecha_pago += '''
+            Fecha máxima de pago: <span class="text-danger"><strong>{}</strong></span><br>
+          '''.format(cuota_a_pagar.fecha_maxima_pago)
 
+        for lote in contrato.lotes.all():
+          lotes += '''
+            <span class="badge badge-light">{}</span><br>
+          '''.format(lote)
 
-      url_procesar_pago = reverse('pagos:procesar_pago_cuota')
-      url_realizar_abono = reverse('pagos:realizar_abono')
-
-      # ya que no se puede comparar date (fecha maxima pago) con datetime (fecha de hoy)
-      fecha_maxima_pago = datetime.combine(cuota_a_pagar.fecha_maxima_pago, datetime.min.time())
-      if hoy < fecha_maxima_pago:
-        fecha_pago += 'Fecha máxima de pago: <span class="text-success"><strong>{}</strong></span><br>'.format(cuota_a_pagar.fecha_maxima_pago.strftime('%d/%m/%Y'))
-      else:
-        fecha_pago += '''
-          Fecha máxima de pago: <span class="text-danger"><strong>{}</strong></span><br>
-        '''.format(cuota_a_pagar.fecha_maxima_pago)
-
-      for lote in contrato.lotes.all():
-        lotes += '''
-          <span class="badge badge-light">{}</span><br>
-        '''.format(lote)
-
-      html += '''
-        <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
-          <h5><span class="badge badge-success">Cuota {1}</span> <small>Contrato #{0}</small></h5>
-          {3}
-          <hr />
-          Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
-          {4}
-          Valor de la cuota: <span class="text-info"><strong>L{2:,}</strong></span>
-          <hr />
-          <button class="btn btn-primary btn-realizar-pago" data-cuota-id="{5}" data-url="{6}">
-            Registrar pago <i class="fas fa-fw fa-money-bill"></i></a>
-          </button>
-          <button class="btn btn-info btn-realizar-abono" data-cuota-id="{5}" data-url="{7}">
-            Realizar abono <i class="fas fa-fw fa-plus"></i></a>
-          </button>
-        </div>
-      '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion)
+        html += '''
+          <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
+            <h5><span class="badge badge-success">Cuota {1}</span> <small>Contrato #{0}</small></h5>
+            {3}
+            <hr />
+            Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
+            {4}
+            Valor de la cuota: <span class="text-info"><strong>L{2:,}</strong></span>
+            <hr />
+            <button class="btn btn-primary btn-realizar-pago" data-cuota-id="{5}" data-url="{6}">
+              Registrar pago <i class="fas fa-fw fa-money-bill"></i></a>
+            </button>
+            <button class="btn btn-info btn-realizar-abono" data-cuota-id="{5}" data-url="{7}">
+              Realizar abono <i class="fas fa-fw fa-plus"></i></a>
+            </button>
+          </div>
+        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion)
+      except:
+        pass
   else:
     html += '''
       <div class="alert alert-warning mt-2" role="alert">
@@ -474,44 +487,47 @@ def procesar_pago_cuota(request):
 
     for contrato in contratos:
       fecha_pago = ''
-      plan = PlanPagos.objects.get(contrato=contrato, estado=True)
-      cuota_a_pagar = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=False).order_by('numero_cuota').first()
-      ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
+      try:
+        plan = PlanPagos.objects.get(contrato=contrato, estado=True)
+        cuota_a_pagar = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=False).order_by('numero_cuota').first()
+        ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
 
-      url_procesar_pago = reverse('pagos:procesar_pago_cuota')
-      url_realizar_abono = reverse('pagos:realizar_abono')
+        url_procesar_pago = reverse('pagos:procesar_pago_cuota')
+        url_realizar_abono = reverse('pagos:realizar_abono')
 
-      # ya que no se puede comparar date (fecha maxima pago) con datetime (fecha de hoy)
-      fecha_maxima_pago = datetime.combine(cuota_a_pagar.fecha_maxima_pago, datetime.min.time())
-      if hoy < fecha_maxima_pago:
-        fecha_pago += 'Fecha máxima de pago: <span class="text-success"><strong>{}</strong></span><br>'.format(cuota_a_pagar.fecha_maxima_pago.strftime('%d/%m/%Y'))
-      else:
-        fecha_pago += '''
-          Fecha máxima de pago: <span class="text-danger"><strong>{}</strong></span><br>
-        '''.format(cuota_a_pagar.fecha_maxima_pago)
+        # ya que no se puede comparar date (fecha maxima pago) con datetime (fecha de hoy)
+        fecha_maxima_pago = datetime.combine(cuota_a_pagar.fecha_maxima_pago, datetime.min.time())
+        if hoy < fecha_maxima_pago:
+          fecha_pago += 'Fecha máxima de pago: <span class="text-success"><strong>{}</strong></span><br>'.format(cuota_a_pagar.fecha_maxima_pago.strftime('%d/%m/%Y'))
+        else:
+          fecha_pago += '''
+            Fecha máxima de pago: <span class="text-danger"><strong>{}</strong></span><br>
+          '''.format(cuota_a_pagar.fecha_maxima_pago)
 
-      for lote in contrato.lotes.all():
-        lotes += '''
-          <span class="badge badge-light">{}</span><br>
-        '''.format(lote)
+        for lote in contrato.lotes.all():
+          lotes += '''
+            <span class="badge badge-light">{}</span><br>
+          '''.format(lote)
 
-      html += '''
-        <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
-          <h5><span class="badge badge-success">Cuota {1}</span> <small>Contrato #{0}</small></h5>
-          {3}
-          <hr />
-          Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
-          {4}
-          Valor de la cuota: <span class="text-info"><strong>L{2:,}</strong></span>
-          <hr />
-          <button class="btn btn-primary btn-realizar-pago" data-cuota-id="{5}" data-url="{6}">
-            Registrar pago <i class="fas fa-fw fa-money-bill"></i></a>
-          </button>
-          <button class="btn btn-info btn-realizar-abono" data-cuota-id="{5}" data-url="{7}">
-            Realizar abono <i class="fas fa-fw fa-plus"></i></a>
-          </button>
-        </div>
-      '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, ultima_cuota_pagada.amortizacion)
+        html += '''
+          <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
+            <h5><span class="badge badge-success">Cuota {1}</span> <small>Contrato #{0}</small></h5>
+            {3}
+            <hr />
+            Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
+            {4}
+            Valor de la cuota: <span class="text-info"><strong>L{2:,}</strong></span>
+            <hr />
+            <button class="btn btn-primary btn-realizar-pago" data-cuota-id="{5}" data-url="{6}">
+              Registrar pago <i class="fas fa-fw fa-money-bill"></i></a>
+            </button>
+            <button class="btn btn-info btn-realizar-abono" data-cuota-id="{5}" data-url="{7}">
+              Realizar abono <i class="fas fa-fw fa-plus"></i></a>
+            </button>
+          </div>
+        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, ultima_cuota_pagada.amortizacion)
+      except:
+        pass
   else:
     html += '''
       <div class="alert alert-warning mt-2" role="alert">
@@ -534,14 +550,15 @@ def pagos_del_mes(request):
 
   primas_mes = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'credito')
   pagos_mes = DetallePlanPagos.objects.filter(fecha_pago__month = mes, fecha_pago__year = anio).order_by('-fecha_pago')
-  abonos_mes = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False).order_by('-fecha_creacion')
+  abonos_mes = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False, saldo_restante_cancelado = False).order_by('-fecha_creacion')
   contratos_contado = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'contado')
+  planes_saldo_cancelado = PlanPagos.objects.filter(fecha_saldo_cancelado__month = mes, fecha_saldo_cancelado__year = anio, estado = False, saldo_restante_cancelado = True)
 
   total_mes_primas = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio).aggregate(suma = Sum('prima'))
   total_mes_cuotas = DetallePlanPagos.objects.filter(fecha_pago__month = mes, fecha_pago__year = anio).aggregate(suma = Sum('plan_pagos__cuota'))
   total_mes_abonos = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False).aggregate(suma = Sum('abono'))
   total_contratos_contado = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'contado').aggregate(suma = Sum('lotes__precio'))
-
+  total_planes_saldo_cancelado = PlanPagos.objects.filter(fecha_saldo_cancelado__month = mes, fecha_saldo_cancelado__year = anio, estado = False, saldo_restante_cancelado = True).aggregate(suma = Sum('monto_saldo_cancelado'))
 
   total_cuotas_primas = 0
 
@@ -557,6 +574,9 @@ def pagos_del_mes(request):
   if total_contratos_contado['suma']:
     total_cuotas_primas += float(total_contratos_contado['suma'])
 
+  if total_planes_saldo_cancelado['suma']:
+    total_cuotas_primas += float(total_planes_saldo_cancelado['suma'])
+
   ctx = {
     'anios': anios,
     'aniovar': anio,
@@ -565,7 +585,8 @@ def pagos_del_mes(request):
     'primas_mes': primas_mes,
     'abonos_mes': abonos_mes,
     'total_mes': total_cuotas_primas,
-    'contratos_contado': contratos_contado
+    'contratos_contado': contratos_contado,
+    'planes_saldo_cancelado': planes_saldo_cancelado,
   }
 
   return render(request, 'app_pagos/pagos_del_mes.html', ctx)
@@ -578,8 +599,6 @@ def realizar_abono(request):
   plazo = request.GET.get('plazo')
   cuota = request.GET.get('cuota')
   saldo = request.GET.get('saldo')
-
-
 
   if proceso == 'verificar-mora':
     cuota = DetallePlanPagos.objects.get(pk=id)
@@ -597,15 +616,47 @@ def realizar_abono(request):
 
       return JsonResponse({'con_exito': False, 'msg': 'No puede abonar ya que tiene {} cuota(s) atrasada(s)'.format(meses)})
     else:
-      return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(ultima_cuota_pagada.amortizacion), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
+
+      # hay ultima cuota cuando al menos se ha pagado una cuota
+      if ultima_cuota_pagada:
+        amor = ultima_cuota_pagada.amortizacion
+      else:
+        monto_lotes = 0
+        for lote in cuota.plan_pagos.contrato.lotes.all():
+          monto_lotes += float(lote.precio)
+
+        amor = monto_lotes - float(cuota.plan_pagos.contrato.prima)
+
+      return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(amor), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
 
   elif proceso == 'recalcular-deuda':
     contrato = Contrato.objects.get(pk=id)
     plan_activo = PlanPagos.objects.get(contrato = contrato, estado = True)
     ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos = plan_activo, cuota_pagada = True).order_by('numero_cuota').last()
-    nuevo_saldo = float(ultima_cuota_pagada.amortizacion) - float(abono)
+    con_exito = None
+    nuevo_saldo = 0
 
-    return JsonResponse({'nuevo_saldo': '{:,}'.format(round(nuevo_saldo, 2))})
+    if ultima_cuota_pagada:
+      # si el abono es mayor que el saldo
+      if float(abono) <= float(ultima_cuota_pagada.amortizacion):
+        nuevo_saldo = float(ultima_cuota_pagada.amortizacion) - float(abono)
+        con_exito = True
+      else:
+        con_exito = False
+    else:
+      monto_lotes = 0
+      for lote in contrato.lotes.all():
+        monto_lotes += float(lote.precio)
+
+      monto_lotes -= float(contrato.prima)
+
+      if float(abono) <= monto_lotes:
+        nuevo_saldo = monto_lotes - float(abono)
+        con_exito = True
+      else:
+        con_exito = False
+
+    return JsonResponse({'con_exito': con_exito, 'nuevo_saldo_float': float(abono), 'id_contrato': contrato.id, 'nuevo_saldo': '{:,}'.format(round(nuevo_saldo, 2))})
 
   elif proceso == 'crear-plan':
     contrato = Contrato.objects.get(pk=id)
@@ -664,6 +715,23 @@ def realizar_abono(request):
 
     return JsonResponse({'url': url_detalle_plan, 'msg': 'Se ha creado un nuevo plan de pagos'})
 
+@login_required()
+def cancelar_deuda(request):
+  # id contrato
+  id = request.GET.get('id')
+  saldo_restante = request.GET.get('saldo_restante')
+
+  contrato = Contrato.objects.get(pk=id)
+  plan = PlanPagos.objects.get(contrato=contrato, estado=True)
+  plan.saldo_restante_cancelado = True
+  plan.monto_saldo_cancelado = float(saldo_restante)
+  plan.estado = False
+  plan.fecha_saldo_cancelado = datetime.now()
+  plan.save()
+
+  url_detalle_plan = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
+
+  return JsonResponse({'msg': 'El contrato ha sido cancelado completamente', 'url': url_detalle_plan})
 
 @login_required()
 def cambiar_contrasena_view(request):

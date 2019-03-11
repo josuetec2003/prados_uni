@@ -146,10 +146,48 @@ $(function () {
     }
 
     $.get(url, {'id': id, 'abono': abono, 'proceso': 'recalcular-deuda'}, function (respuesta) {
-      $('#nueva-deuda').val(respuesta.nuevo_saldo);
-      $('#nuevo-plazo').focus();
+      console.log(respuesta.con_exito);
+      if (respuesta.con_exito)
+      {
+        $('#nueva-deuda').val(respuesta.nuevo_saldo);
+
+        if (respuesta.nuevo_saldo == '0.0')
+        {
+          $('#btn-cancelar-deuda')
+            .removeAttr('disabled')
+            .attr('data-contrato-id', respuesta.id_contrato)
+            .attr('data-saldo-float', respuesta.nuevo_saldo_float);
+
+          $('#btn-crear-plan-nuevo').attr('disabled', 'disabled');
+        } else {
+          $('#nuevo-plazo').focus();
+          $('#btn-cancelar-deuda').attr('disabled', 'disabled');
+          $('#btn-crear-plan-nuevo').removeAttr('disabled');
+        }
+      } else {
+        $('#nueva-deuda').val('');
+        notify('warn', 'El abono no puede ser mayor al saldo');
+        $('#btn-cancelar-deuda').attr('disabled', 'disabled');
+        $('#btn-crear-plan-nuevo').removeAttr('disabled');
+
+      }
     }, 'json');
   });
+
+  $('#btn-cancelar-deuda').on('click', function () {
+    var id = $(this).data('contrato-id');
+    var url = $(this).data('url');
+    var saldo_restante = $(this).data('saldo-float');
+
+    $.get(url, {'id': id, 'saldo_restante': saldo_restante}, function (respuesta) {
+      notify('success', respuesta.msg);
+
+      setTimeout(function () {
+        location.href = respuesta.url;
+      }, 1500);
+    }, 'json');
+
+  })
 
   $('#btn-nueva-cuota').on('click', function () {
     var nuevo_monto = $('#nueva-deuda').val();
@@ -157,6 +195,13 @@ $(function () {
     var nuevo_plazo = $('#nuevo-plazo').val();
     var tipo_plazo = $('#tipo-plazo').val();
     var abono = $('#txt-abono').val();
+
+    if (nuevo_monto == '')
+    {
+      notify('warn', 'Recalcule la deuda primero');
+      $('#txt-abono').focus();
+      return false;
+    }
 
     if (abono == '')
     {

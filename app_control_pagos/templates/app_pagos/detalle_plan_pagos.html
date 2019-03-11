@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block title_content %}
-Plan de pagos | Contrato #{{ plan.contrato.id }}
+Plan de pagos | Contrato #{{ contrato.id }}
 {% endblock %}
 
 {% load humanize %}
@@ -206,6 +206,14 @@ Plan de pagos | Contrato #{{ plan.contrato.id }}
               <td class="text-right">L{{ cuota.plan_pagos.cuota|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
+
+            {% if plan_saldo_cancelado %}
+            <tr>
+              <td>Plan #{{ plan_saldo_cancelado.numero }}</td>
+              <td>Cancelación de la deuda</td>
+              <td class="text-right">L{{ plan_saldo_cancelado.monto_saldo_cancelado|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>

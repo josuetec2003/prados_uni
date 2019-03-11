@@ -118,6 +118,20 @@ Pagos registrados por mes
           <td colspan="4">No hay pagos registrados en esta fecha</td>
         </tr>
         {% endfor %}
+
+        {% for plan in planes_saldo_cancelado %}
+        <tr>
+          <td>{{ plan.contrato.cliente }}</td>
+          <td><a href="{% url 'pagos:detalle_plan_pagos' plan.contrato.id %}">Contrato #{{ plan.contrato.id }}</a></td>
+          <td class="text-center">Saldo de deuda cancelado</td>
+          <td class="text-right text-warning"><strong>L{{ plan.monto_saldo_cancelado|floatformat:2|intcomma }}</strong></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="4"></td>
+        </tr>
+
+        {% endfor %}
       </tbody>
     </table>
   </div>

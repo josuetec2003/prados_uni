@@ -75,12 +75,26 @@ Registrar pago
           <div class="col-sm-5">
             <input type="text" class="form-control" id="nueva-cuota" readonly="readonly">
           </div>
+          <div class="col-sm-4">
+            <button type="button" id="btn-nueva-cuota" class="btn btn-secondary btn-block" data-dismiss="modal">
+              <small>Recalcular cuota</small>
+            </button>
+          </div>
         </div>
 
       </div>
       <div class="modal-footer">
-        <button type="button" id="btn-nueva-cuota" class="btn btn-secondary" data-dismiss="modal">Calcular nueva cuota</button>
-        <button type="button" data-url="{% url 'pagos:realizar_abono' %}" class="btn btn-primary" id="btn-crear-plan-nuevo">Crear plan de pagos</button>
+        <button type="button"
+                data-url="{% url 'pagos:cancelar_deuda' %}"
+                class="btn btn-info" id="btn-cancelar-deuda" disabled>
+          Cancelar deuda
+        </button>
+
+        <button type="button"
+                data-url="{% url 'pagos:realizar_abono' %}"
+                class="btn btn-primary" id="btn-crear-plan-nuevo">
+          Crear plan de pagos
+        </button>
       </div>
     </div>
   </div>

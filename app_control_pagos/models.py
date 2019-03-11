@@ -93,6 +93,9 @@ class PlanPagos(models.Model):
   meses = models.IntegerField()
   estado = models.BooleanField(default=True)
   cuota = models.DecimalField(max_digits=15, decimal_places=2)
+  saldo_restante_cancelado = models.BooleanField(default=False)
+  monto_saldo_cancelado = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+  fecha_saldo_cancelado = models.DateTimeField(null=True, blank=True)
 
   def __str__(self):
     return '{} > Plan #{} > Estado: {}'.format(self.contrato, self.numero, self.estado)
