@@ -550,7 +550,7 @@ def pagos_del_mes(request):
 
   primas_mes = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'credito')
   pagos_mes = DetallePlanPagos.objects.filter(fecha_pago__month = mes, fecha_pago__year = anio).order_by('-fecha_pago')
-  abonos_mes = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False, saldo_restante_cancelado = False).order_by('-fecha_creacion')
+  abonos_mes = PlanPagos.objects.filter(fecha_creacion__month = mes, fecha_creacion__year = anio, abono__isnull = False).order_by('-fecha_creacion')
   contratos_contado = Contrato.objects.filter(fecha_adquisicion__month = mes, fecha_adquisicion__year = anio, tipo_venta = 'contado')
   planes_saldo_cancelado = PlanPagos.objects.filter(fecha_saldo_cancelado__month = mes, fecha_saldo_cancelado__year = anio, estado = False, saldo_restante_cancelado = True)
 
