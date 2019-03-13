@@ -175,6 +175,8 @@ $(function () {
   });
 
   $('#btn-cancelar-deuda').on('click', function () {
+    if (!confirm('Confirma la cancelación de la deuda?')) return false;
+
     var id = $(this).data('contrato-id');
     var url = $(this).data('url');
     var saldo_restante = $(this).data('saldo-float');

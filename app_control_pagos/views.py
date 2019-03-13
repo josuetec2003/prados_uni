@@ -463,6 +463,10 @@ def procesar_pago_cuota(request):
     contrato.estado = False
     contrato.save()
 
+    plan = PlanPagos.objects.get(pk=ultima_cuota.plan_pagos.id)
+    plan.estado = False
+    plan.save()
+
     estado_vendido = EstadoLote.objects.get(pk=2)
 
     # se ponen en estado vendido los lotes del contrato
@@ -722,12 +726,21 @@ def cancelar_deuda(request):
   saldo_restante = request.GET.get('saldo_restante')
 
   contrato = Contrato.objects.get(pk=id)
+  contrato.estado = False
+  contrato.save()
+
   plan = PlanPagos.objects.get(contrato=contrato, estado=True)
   plan.saldo_restante_cancelado = True
   plan.monto_saldo_cancelado = float(saldo_restante)
   plan.estado = False
   plan.fecha_saldo_cancelado = datetime.now()
   plan.save()
+
+  # Cambiar el estado de los lotes
+  estado_vendido = EstadoLote.objects.get(descripcion = 'Vendido')
+  for lote in contrato.lotes.all():
+    lote.estado = estado_vendido
+    lote.save()
 
   url_detalle_plan = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
 
