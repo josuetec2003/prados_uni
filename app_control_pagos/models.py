@@ -22,7 +22,7 @@ class Lote(models.Model):
   estado = models.ForeignKey(EstadoLote, on_delete = models.CASCADE)
 
   def __str__(self):
-    return '{0} ► Lote #{1} ► L {2:,}'.format(self.sector, self.numero, self.precio)
+    return '{0} > Lote #{1} > L {2:,}'.format(self.sector, self.numero, self.precio)
 
 class Cliente(models.Model):
   identidad = models.CharField(max_length=15, primary_key=True)
