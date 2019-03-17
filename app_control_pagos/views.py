@@ -119,7 +119,7 @@ def contrato_view(request, tipo = None):
   q = request.GET.get('q')
 
   if q:
-    contratos = Contrato.objects.filter(Q(cliente__nombre__startswith = q) | Q(cliente__apellido__startswith = q)).order_by('-fecha_adquisicion')
+    contratos = Contrato.objects.filter(Q(cliente__nombre__istartswith = q) | Q(cliente__apellido__istartswith = q)).order_by('-fecha_adquisicion')
   else:
     if tipo == 'credito':
       contratos = Contrato.objects.filter(tipo_venta = 'credito', estado = True).order_by('-fecha_adquisicion')
@@ -377,7 +377,7 @@ def obtener_prestamos_cliente(request):
     hoy = datetime.now()
 
     for contrato in contratos:
-      lotes = ''
+      lotes = '' # Estaba despues del for
       fecha_pago = ''
 
       try:
@@ -398,9 +398,9 @@ def obtener_prestamos_cliente(request):
         else:
           saldo_amortizacion = ultima_cuota_pagada.amortizacion
 
-
         url_procesar_pago = reverse('pagos:procesar_pago_cuota')
         url_realizar_abono = reverse('pagos:realizar_abono')
+        url_plan_pagos = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
 
         # ya que no se puede comparar date (fecha maxima pago) con datetime (fecha de hoy)
         fecha_maxima_pago = datetime.combine(cuota_a_pagar.fecha_maxima_pago, datetime.min.time())
@@ -418,7 +418,7 @@ def obtener_prestamos_cliente(request):
 
         html += '''
           <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
-            <h5><span class="badge badge-success">Cuota {1}</span> <small>Contrato #{0}</small></h5>
+            <h5><span class="badge badge-success">Cuota por pagar: #{1}</span> <small><a href="{9}">Contrato #{0}</a></small></h5>
             {3}
             <hr />
             Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
@@ -432,7 +432,7 @@ def obtener_prestamos_cliente(request):
               Realizar abono <i class="fas fa-fw fa-plus"></i></a>
             </button>
           </div>
-        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion)
+        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion, url_plan_pagos)
       except:
         pass
   else:
@@ -484,20 +484,34 @@ def procesar_pago_cuota(request):
   contratos = Contrato.objects.filter(cliente=cliente, estado=True, tipo_venta = 'credito')
 
   html = ''
-  lotes = ''
 
   if contratos:
     hoy = datetime.now()
 
     for contrato in contratos:
+      lotes = ''
       fecha_pago = ''
+
       try:
         plan = PlanPagos.objects.get(contrato=contrato, estado=True)
         cuota_a_pagar = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=False).order_by('numero_cuota').first()
+
+        # la ultima cuota pagada solo la tendrán los contratos que ya tengan al menos la primera cuota realizada
         ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
+
+        saldo_amortizacion = None
+
+        if not ultima_cuota_pagada:
+          if not plan.saldo_deuda:
+            saldo_amortizacion = plan.contrato.monto_contrato_despues_de_prima
+          else:
+            saldo_amortizacion = plan.saldo_deuda
+        else:
+          saldo_amortizacion = ultima_cuota_pagada.amortizacion
 
         url_procesar_pago = reverse('pagos:procesar_pago_cuota')
         url_realizar_abono = reverse('pagos:realizar_abono')
+        url_plan_pagos = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
 
         # ya que no se puede comparar date (fecha maxima pago) con datetime (fecha de hoy)
         fecha_maxima_pago = datetime.combine(cuota_a_pagar.fecha_maxima_pago, datetime.min.time())
@@ -515,7 +529,7 @@ def procesar_pago_cuota(request):
 
         html += '''
           <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
-            <h5><span class="badge badge-success">Cuota {1}</span> <small>Contrato #{0}</small></h5>
+            <h5><span class="badge badge-success">Cuota por pagar: #{1}</span> <small><a href="{9}">Contrato #{0}</a></small></h5>
             {3}
             <hr />
             Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
@@ -529,9 +543,10 @@ def procesar_pago_cuota(request):
               Realizar abono <i class="fas fa-fw fa-plus"></i></a>
             </button>
           </div>
-        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, ultima_cuota_pagada.amortizacion)
-      except:
-        pass
+        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion, url_plan_pagos)
+
+      except Exception as e:
+        html += '<div class="shadow-none p-3 mb-2 mt-2 bg-light rounded">{}</div>'.format(e)
   else:
     html += '''
       <div class="alert alert-warning mt-2" role="alert">
