@@ -107,7 +107,7 @@ $(function () {
         notify('success', respuesta.msg);
 
         setTimeout(function () {
-          $('#pagos-a-realizar').slideUp().empty().html(respuesta.html).slideDown();
+          $('#pagos-a-realizar').fadeOut().empty().html(respuesta.html).fadeIn();
         }, 1500);
       }
     }, 'json');
