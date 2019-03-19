@@ -295,8 +295,6 @@ $(function () {
       }, 1500);
     }, 'json');
 
-
-
     return false;
   });
 
@@ -307,6 +305,14 @@ function notify (style, msg)
   $.notify.defaults({ className: style });
   $.notify(msg, {position: 'bottom'});
 }
+
+/*
+ *   Prados Universitarios ®
+ *   Josué Alfredo Alvarez (Developer)
+ *   josuetec2003@gmail.com
+ *   +504 9797-8830
+ *   instagram.com/josuetec2003
+ */
 
 
 
