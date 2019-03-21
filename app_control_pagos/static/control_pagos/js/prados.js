@@ -128,10 +128,17 @@ $(function () {
         $('#saldo-pendiente').val(respuesta.saldo_pendiente);
         $('#tasa-contrato').val(respuesta.tasa);
         $('#modal-abono').modal();
-        $('#txt-abono').focus();
+        $('#nueva-deuda').val('');
+        $('#nuevo-plazo').val('');
+        $('#nueva-cuota').val('');
+        $('#txt-abono').val('');
       }
     }, 'json');
   });
+
+  $('body').on('shown.bs.modal', '#modal-abono', function () {
+      $('input#txt-abono', this).focus();
+  })
 
   $('#btn-recalcular-id').on('click', function () {
     var id = $(this).attr('data-contrato-id');
@@ -307,7 +314,7 @@ function notify (style, msg)
 }
 
 /*
- *   Prados Universitarios ®
+ *   Prados Universitarios
  *   Josué Alfredo Alvarez (Developer)
  *   josuetec2003@gmail.com
  *   +504 9797-8830
