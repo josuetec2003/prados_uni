@@ -31,6 +31,8 @@ urlpatterns = [
   path('generar-cotizacion/', views.generar_cotizacion, name="generar_cotizacion"),
   path('info-contrato-contado/<int:id>/', views.info_contrato_contado, name="info_contrato_contado"),
   path('cancelar-deuda/', views.cancelar_deuda, name="cancelar_deuda"),
+  path('anular-contrato/<int:idc>/', views.anular_contrato, name="anular_contrato"),
+
 
 
 ]

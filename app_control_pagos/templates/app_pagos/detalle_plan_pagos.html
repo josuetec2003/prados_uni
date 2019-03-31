@@ -69,6 +69,11 @@ Plan de pagos | Contrato #{{ contrato.id }}
         </td>
       </tr>
     </table>
+    {% if contrato.anulado %}
+    <div class="alert alert-danger text-center" role="alert">
+     Este contrato ha sido anulado
+    </div>
+    {% endif %}
   </div>
   <div class="col-md-7 shadow-sm p-3 mb-5 bg-white rounded">
     <nav>

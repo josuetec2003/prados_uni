@@ -119,16 +119,16 @@ def contrato_view(request, tipo = None):
   q = request.GET.get('q')
 
   if q:
-    contratos = Contrato.objects.filter(Q(cliente__nombre__istartswith = q) | Q(cliente__apellido__istartswith = q)).order_by('-fecha_adquisicion')
+    contratos = Contrato.objects.filter( (Q(cliente__nombre__istartswith = q) | Q(cliente__apellido__istartswith = q)), anulado = False).order_by('-fecha_adquisicion')
   else:
     if tipo == 'credito':
-      contratos = Contrato.objects.filter(tipo_venta = 'credito', estado = True).order_by('-fecha_adquisicion')
+      contratos = Contrato.objects.filter(tipo_venta = 'credito', estado = True, anulado = False).order_by('-fecha_adquisicion')
     elif tipo == 'contado':
-      contratos = Contrato.objects.filter(tipo_venta = 'contado').order_by('-fecha_adquisicion')
+      contratos = Contrato.objects.filter(tipo_venta = 'contado', anulado = False).order_by('-fecha_adquisicion')
     elif tipo == 'pagado':
-      contratos = Contrato.objects.filter(estado = False).order_by('-fecha_adquisicion')
+      contratos = Contrato.objects.filter(estado = False, anulado = False).order_by('-fecha_adquisicion')
     else:
-      contratos = Contrato.objects.all().order_by('-fecha_adquisicion')
+      contratos = Contrato.objects.filter(anulado = False).order_by('-fecha_adquisicion')
 
   ctx = {
     'form': form,
@@ -369,7 +369,7 @@ def obtener_prestamos_cliente(request):
 
   cliente = Cliente.objects.get(pk=identidad)
 
-  contratos = Contrato.objects.filter(cliente=cliente, estado=True, tipo_venta = 'credito')
+  contratos = Contrato.objects.filter(cliente=cliente, estado=True, anulado = False, tipo_venta = 'credito')
 
   html = ''
 
@@ -481,7 +481,7 @@ def procesar_pago_cuota(request):
   # PARA MOSTRAR LA NUEVA CUOTA POR PAGAR
   cliente = Cliente.objects.get(pk = cuota.plan_pagos.contrato.cliente.identidad )
 
-  contratos = Contrato.objects.filter(cliente=cliente, estado=True, tipo_venta = 'credito')
+  contratos = Contrato.objects.filter(cliente=cliente, estado=True, anulado = False, tipo_venta = 'credito')
 
   html = ''
 
@@ -909,6 +909,21 @@ def info_contrato_contado(request, id):
   }
 
   return render(request, 'app_pagos/info_contrato_contado.html', ctx)
+
+def anular_contrato(request, idc):
+  contrato = Contrato.objects.get(pk=idc)
+  contrato.anulado = True
+  contrato.save()
+
+  # Volver disponibles los lotes
+  disponible = EstadoLote.objects.get(pk=1)
+  for lote in contrato.lotes.all():
+    lote.estado = disponible
+    lote.save()
+
+  return HttpResponseRedirect(reverse('pagos:contrato', args=['todos']))
+
+
 
 
 

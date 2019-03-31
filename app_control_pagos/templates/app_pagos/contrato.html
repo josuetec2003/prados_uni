@@ -41,7 +41,7 @@ Contrato de venta
 
       <hr>
 
-      <table class="table table-sm table-bordered table-font-small">
+      <table class="table table-sm table-bordered table-font-extra-small">
         <thead class="thead-dark">
           <tr>
             <th>Contrato #</th>
@@ -49,6 +49,7 @@ Contrato de venta
             <th>Fecha</th>
             <th>Lotes</th>
             <th class="text-center">Plan</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -68,6 +69,11 @@ Contrato de venta
                 {% else %}
                 <a href="{% url 'pagos:info_contrato_contado' contrato.id %}">Ver</a>
                 {% endif %}
+              </td>
+              <td class="text-center">
+                <a href="{% url 'pagos:anular_contrato' contrato.id %}"
+                   class="badge badge-danger"
+                   onclick="if (!confirm('Confirma la anulación del contrato?')) return false;">Anular</a>
               </td>
             </tr>
           {% endfor %}

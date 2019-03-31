@@ -61,7 +61,8 @@ class Contrato(models.Model):
   periodos = models.ForeignKey(Periodo, on_delete=models.CASCADE, null=True, blank=True)
   prima = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
   tasa = models.CharField(max_length=3, null=True, blank=True)
-  estado = models.BooleanField(default=True)
+  estado = models.BooleanField(default=True) # False: Contrato pagado, True: En estado pagando
+  anulado = models.BooleanField(default=False) # True: Se anula por falta de pago
 
   @property
   def monto_total_lotes(self):
