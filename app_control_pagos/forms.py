@@ -30,7 +30,8 @@ class ContratoForm(ModelForm):
       'periodos': forms.Select(attrs={'class': 'chosen'}),
       'prima': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Presione ENTER para ver nuevo saldo', 'data-url': '/s/calcular-monto-venta/'}),
       'tasa': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tasa anual en porcentaje (%)'}),
-      'estado': forms.HiddenInput()
+      'estado': forms.HiddenInput(),
+      'anulado': forms.HiddenInput()
     }
 
 class CotizacionForm(ModelForm):
