@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '1roe$f=+%3**ua72)))7k#rut-m%wl97^k5ixwj+r66)1!v^^3'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -138,3 +138,4 @@ LOGIN_URL = '/'
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
+DATA_UPLOAD_MAX_NUMBER_FIELDS = None

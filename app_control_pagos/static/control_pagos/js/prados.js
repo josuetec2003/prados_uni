@@ -231,7 +231,7 @@ $(function () {
     else
       nuevo_plazo = parseInt(nuevo_plazo);
 
-    nuevo_monto = parseFloat(nuevo_monto.replace(",", ""))
+    nuevo_monto = parseFloat(nuevo_monto.replace(/,/g, ''))
 
     var cuota = (nuevo_monto * tasa) / (1 - Math.pow(1 + tasa, -nuevo_plazo));
     $('#nueva-cuota').val(cuota.toLocaleString(undefined, {maximumFractionDigits: 2}));
@@ -278,8 +278,8 @@ $(function () {
       nuevo_plazo = parseInt(nuevo_plazo);
 
     abono = parseFloat(abono)
-    nueva_cuota = parseFloat(nueva_cuota.replace(",", ""))
-    saldo_pendiente = parseFloat(saldo_pendiente.replace(",", "").replace("L", ""))
+    nueva_cuota = parseFloat(nueva_cuota.replace(/,/g, ''))
+    saldo_pendiente = parseFloat(saldo_pendiente.replace(/,/g, '').replace("L", ""))
 
     console.log('Abono:', abono);
     console.log('Plazo:', nuevo_plazo);
