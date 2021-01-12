@@ -640,13 +640,24 @@ def realizar_abono(request):
       if ultima_cuota_pagada:
         amor = ultima_cuota_pagada.amortizacion
       else:
-        monto_lotes = 0
-        for lote in cuota.plan_pagos.contrato.lotes.all():
-          monto_lotes += float(lote.precio)
+        # SI NO HAY ULTIMA CUOTA PAGADA
+        # Esto sucedera si al crear el plan, en vez de hacer el pago de una cuota, se hace un abono
+        # ...el plan activo no tiene saldo_deuda, por tanto, se procede a calcular el saldo basado en
+        # ...la suma de los lotes, menos el monto de prima que pago el cliente al inicio del contrato
+        if not cuota.plan_pagos.saldo_deuda:
+          monto_lotes = 0
+          for lote in cuota.plan_pagos.contrato.lotes.all():
+            monto_lotes += float(lote.precio)
 
-        amor = monto_lotes - float(cuota.plan_pagos.contrato.prima)
+          amor = monto_lotes - float(cuota.plan_pagos.contrato.prima)
+        else:
+          # Al no haber ultima cuota pagada y el plan tenga saldo_deuda, significa que es un plan nuevo que
+          # ...arrastro el saldo de la deuda pendiente en el plan anterior y se usa para mostrarlo al usuario
+          # ...cuando quiera hacerse otro abono (un plan nuevo)
+          amor = cuota.plan_pagos.saldo_deuda
 
       return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(amor), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
+      #return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(cuota.plan_pagos.saldo_deuda), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
 
   elif proceso == 'recalcular-deuda':
     contrato = Contrato.objects.get(pk=id)
@@ -663,11 +674,14 @@ def realizar_abono(request):
       else:
         con_exito = False
     else:
-      monto_lotes = 0
-      for lote in contrato.lotes.all():
-        monto_lotes += float(lote.precio)
+      if not plan_activo.saldo_deuda:
+        monto_lotes = 0
+        for lote in contrato.lotes.all():
+          monto_lotes += float(lote.precio)
 
-      monto_lotes -= float(contrato.prima)
+        monto_lotes -= float(contrato.prima)
+      else:
+        monto_lotes = float(plan_activo.saldo_deuda)
 
       if float(abono) <= monto_lotes:
         nuevo_saldo = monto_lotes - float(abono)

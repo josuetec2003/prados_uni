@@ -1,2 +1,4 @@
 /connection.cnf
 /db.sqlite
+.DS_Store?
+*.pyc
