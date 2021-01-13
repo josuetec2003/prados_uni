@@ -389,13 +389,16 @@ def obtener_prestamos_cliente(request):
         ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
 
         saldo_amortizacion = None
+        fecha_ultimo_pago = None
 
         if not ultima_cuota_pagada:
           if not plan.saldo_deuda:
             saldo_amortizacion = plan.contrato.monto_contrato_despues_de_prima
           else:
+            fecha_ultimo_pago = plan.fecha_creacion.strftime("%d/%m/%Y")
             saldo_amortizacion = plan.saldo_deuda
         else:
+          fecha_ultimo_pago = ultima_cuota_pagada.fecha_pago.strftime("%d/%m/%Y")
           saldo_amortizacion = ultima_cuota_pagada.amortizacion
 
         url_procesar_pago = reverse('pagos:procesar_pago_cuota')
@@ -409,18 +412,23 @@ def obtener_prestamos_cliente(request):
         else:
           fecha_pago += '''
             Fecha máxima de pago: <span class="text-danger"><strong>{}</strong></span><br>
-          '''.format(cuota_a_pagar.fecha_maxima_pago)
+          '''.format(cuota_a_pagar.fecha_maxima_pago.strftime('%d/%m/%Y'))
 
         for lote in contrato.lotes.all():
           lotes += '''
             <span class="badge badge-light">{}</span><br>
           '''.format(lote)
+        
+        # Para mostrar la fecha del ultimo pago realizado, ya sea cuota o creacion de un plan nuevo
+        # El primer plan creado no tendra fecha de ultimo pago, para eso es este IF
+        fup = 'Fecha del último pago: <span class="text-dark"><strong>{0}</strong></span><br />'.format(fecha_ultimo_pago) if fecha_ultimo_pago else ''
 
         html += '''
           <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
             <h5><span class="badge badge-success">Cuota por pagar: #{1}</span> <small><a href="{9}">Contrato #{0}</a></small></h5>
             {3}
             <hr />
+            {10}
             Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
             {4}
             Valor de la cuota: <span class="text-info"><strong>L{2:,}</strong></span>
@@ -432,7 +440,7 @@ def obtener_prestamos_cliente(request):
               Realizar abono <i class="fas fa-fw fa-plus"></i></a>
             </button>
           </div>
-        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion, url_plan_pagos)
+        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion, url_plan_pagos, fup)
       except:
         pass
   else:
@@ -500,13 +508,16 @@ def procesar_pago_cuota(request):
         ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos=plan, cuota_pagada=True).order_by('numero_cuota').last()
 
         saldo_amortizacion = None
+        fecha_ultimo_pago = None
 
         if not ultima_cuota_pagada:
           if not plan.saldo_deuda:
             saldo_amortizacion = plan.contrato.monto_contrato_despues_de_prima
           else:
             saldo_amortizacion = plan.saldo_deuda
+            fecha_ultimo_pago = plan.fecha_creacion.strftime("%d/%m/%Y")
         else:
+          fecha_ultimo_pago = ultima_cuota_pagada.fecha_pago.strftime("%d/%m/%Y")
           saldo_amortizacion = ultima_cuota_pagada.amortizacion
 
         url_procesar_pago = reverse('pagos:procesar_pago_cuota')
@@ -527,11 +538,14 @@ def procesar_pago_cuota(request):
             <span class="badge badge-light">{}</span><br>
           '''.format(lote)
 
+        fup = 'Fecha del último pago: <span class="text-dark"><strong>{0}</strong></span><br />'.format(fecha_ultimo_pago) if fecha_ultimo_pago else ''
+
         html += '''
           <div class="shadow-none p-3 mb-2 mt-2 bg-light rounded" id="div-cuota-{5}">
             <h5><span class="badge badge-success">Cuota por pagar: #{1}</span> <small><a href="{9}">Contrato #{0}</a></small></h5>
             {3}
             <hr />
+            {10}
             Saldo: <span class="text-danger"><strong>L{8:,}</strong></span> <br />
             {4}
             Valor de la cuota: <span class="text-info"><strong>L{2:,}</strong></span>
@@ -543,7 +557,7 @@ def procesar_pago_cuota(request):
               Realizar abono <i class="fas fa-fw fa-plus"></i></a>
             </button>
           </div>
-        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion, url_plan_pagos)
+        '''.format(contrato.id, cuota_a_pagar.numero_cuota, plan.cuota, lotes, fecha_pago, cuota_a_pagar.id, url_procesar_pago, url_realizar_abono, saldo_amortizacion, url_plan_pagos, fup)
 
       except Exception as e:
         html += '<div class="shadow-none p-3 mb-2 mt-2 bg-light rounded">{}</div>'.format(e)
