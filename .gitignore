@@ -2,3 +2,4 @@
 /db.sqlite
 .DS_Store?
 *.pyc
+app_control_pagos/__pycache__/*.pyc

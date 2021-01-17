@@ -200,7 +200,7 @@ $(function () {
 
   $('#btn-nueva-cuota').on('click', function () {
     var nuevo_monto = $('#nueva-deuda').val();
-    var tasa = parseFloat($('#tasa-contrato').val()) / 12;
+    var tasa = Number($('#tasa-contrato').val()) / 12;
     var nuevo_plazo = $('#nuevo-plazo').val();
     var tipo_plazo = $('#tipo-plazo').val();
     var abono = $('#txt-abono').val();
@@ -227,17 +227,16 @@ $(function () {
     }
 
     if (tipo_plazo == 'anios')
-      nuevo_plazo = parseInt(nuevo_plazo) * 12;
+      nuevo_plazo = Number(nuevo_plazo) * 12;
     else
-      nuevo_plazo = parseInt(nuevo_plazo);
+      nuevo_plazo = Number(nuevo_plazo);
 
-    nuevo_monto = parseFloat(nuevo_monto.replace(/,/g, ''))
+    nuevo_monto = Number(nuevo_monto.replace(/,/g, ''))
 
-    var cuota = (nuevo_monto * tasa) / (1 - Math.pow(1 + tasa, -nuevo_plazo));
-    $('#nueva-cuota').val(cuota.toLocaleString(undefined, {maximumFractionDigits: 2}));
+    var cuota = (nuevo_monto * tasa) / (1 - Math.pow(1 + tasa, -nuevo_plazo));  
+    $('#nueva-cuota').val(formatNumber(cuota.toFixed(2)));
 
     return false;
-
   });
 
   $('#btn-filtrar-pagos').on('click', function () {
@@ -249,6 +248,7 @@ $(function () {
   });
 
   $('#btn-crear-plan-nuevo').on('click', function () {
+    var $me = $(this);
     var abono = $('#txt-abono').val();
     var nuevo_plazo = $('#nuevo-plazo').val();
     var tipo_plazo = $('#tipo-plazo').val();
@@ -277,9 +277,9 @@ $(function () {
     else
       nuevo_plazo = parseInt(nuevo_plazo);
 
-    abono = parseFloat(abono)
-    nueva_cuota = parseFloat(nueva_cuota.replace(/,/g, ''))
-    saldo_pendiente = parseFloat(saldo_pendiente.replace(/,/g, '').replace("L", ""))
+    abono = Number(abono)
+    nueva_cuota = Number(nueva_cuota.replace(/,/g, ''))
+    saldo_pendiente = Number(saldo_pendiente.replace(/,/g, '').replace("L", ""))
 
     console.log('Abono:', abono);
     console.log('Plazo:', nuevo_plazo);
@@ -294,6 +294,7 @@ $(function () {
       'proceso': 'crear-plan'
     };
 
+    $me.attr('disabled', true);
     $.get(url, ctx, function (respuesta) {
       notify('success', respuesta.msg);
 
@@ -311,6 +312,11 @@ function notify (style, msg)
 {
   $.notify.defaults({ className: style });
   $.notify(msg, {position: 'bottom'});
+}
+
+function formatNumber (num)
+{
+  return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
 }
 
 /*

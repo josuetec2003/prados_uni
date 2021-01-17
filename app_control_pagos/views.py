@@ -626,141 +626,143 @@ def pagos_del_mes(request):
 
 @login_required()
 def realizar_abono(request):
-  id = request.GET.get('id')
-  proceso = request.GET.get('proceso')
-  abono = request.GET.get('abono')
-  plazo = request.GET.get('plazo')
-  cuota = request.GET.get('cuota')
-  saldo = request.GET.get('saldo')
 
-  if proceso == 'verificar-mora':
-    cuota = DetallePlanPagos.objects.get(pk=id)
-    cuota_por_pagar = DetallePlanPagos.objects.filter(plan_pagos = cuota.plan_pagos, cuota_pagada = False).order_by('numero_cuota').first()
-    ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos = cuota.plan_pagos, cuota_pagada = True).order_by('numero_cuota').last()
-    fecha_dt_cuota_por_pagar = datetime.combine(cuota_por_pagar.fecha_maxima_pago, datetime.min.time())
+  if request.is_ajax():
+    id = request.GET.get('id')
+    proceso = request.GET.get('proceso')
+    abono = request.GET.get('abono')
+    plazo = request.GET.get('plazo')
+    cuota = request.GET.get('cuota')
+    saldo = request.GET.get('saldo')
 
-    hoy = datetime.now()
+    if proceso == 'verificar-mora':
+      cuota = DetallePlanPagos.objects.get(pk=id)
+      cuota_por_pagar = DetallePlanPagos.objects.filter(plan_pagos = cuota.plan_pagos, cuota_pagada = False).order_by('numero_cuota').first()
+      ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos = cuota.plan_pagos, cuota_pagada = True).order_by('numero_cuota').last()
+      fecha_dt_cuota_por_pagar = datetime.combine(cuota_por_pagar.fecha_maxima_pago, datetime.min.time())
 
-    if hoy > fecha_dt_cuota_por_pagar:
-      meses = DetallePlanPagos.objects.filter(
-        plan_pagos = cuota.plan_pagos,
-        cuota_pagada = False,
-        fecha_maxima_pago__lt=hoy).count()
+      hoy = datetime.now()
 
-      return JsonResponse({'con_exito': False, 'msg': 'No puede abonar ya que tiene {} cuota(s) atrasada(s)'.format(meses)})
-    else:
+      if hoy > fecha_dt_cuota_por_pagar:
+        meses = DetallePlanPagos.objects.filter(
+          plan_pagos = cuota.plan_pagos,
+          cuota_pagada = False,
+          fecha_maxima_pago__lt=hoy).count()
 
-      # hay ultima cuota cuando al menos se ha pagado una cuota
-      if ultima_cuota_pagada:
-        amor = ultima_cuota_pagada.amortizacion
+        return JsonResponse({'con_exito': False, 'msg': 'No puede abonar ya que tiene {} cuota(s) atrasada(s)'.format(meses)})
       else:
-        # SI NO HAY ULTIMA CUOTA PAGADA
-        # Esto sucedera si al crear el plan, en vez de hacer el pago de una cuota, se hace un abono
-        # ...el plan activo no tiene saldo_deuda, por tanto, se procede a calcular el saldo basado en
-        # ...la suma de los lotes, menos el monto de prima que pago el cliente al inicio del contrato
-        if not cuota.plan_pagos.saldo_deuda:
+
+        # hay ultima cuota cuando al menos se ha pagado una cuota
+        if ultima_cuota_pagada:
+          amor = ultima_cuota_pagada.amortizacion
+        else:
+          # SI NO HAY ULTIMA CUOTA PAGADA
+          # Esto sucedera si al crear el plan, en vez de hacer el pago de una cuota, se hace un abono
+          # ...el plan activo no tiene saldo_deuda, por tanto, se procede a calcular el saldo basado en
+          # ...la suma de los lotes, menos el monto de prima que pago el cliente al inicio del contrato
+          if not cuota.plan_pagos.saldo_deuda:
+            monto_lotes = 0
+            for lote in cuota.plan_pagos.contrato.lotes.all():
+              monto_lotes += float(lote.precio)
+
+            amor = monto_lotes - float(cuota.plan_pagos.contrato.prima)
+          else:
+            # Al no haber ultima cuota pagada y el plan tenga saldo_deuda, significa que es un plan nuevo que
+            # ...arrastro el saldo de la deuda pendiente en el plan anterior y se usa para mostrarlo al usuario
+            # ...cuando quiera hacerse otro abono (un plan nuevo)
+            amor = cuota.plan_pagos.saldo_deuda
+
+        return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(amor), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
+        #return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(cuota.plan_pagos.saldo_deuda), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
+
+    elif proceso == 'recalcular-deuda':
+      contrato = Contrato.objects.get(pk=id)
+      plan_activo = PlanPagos.objects.get(contrato = contrato, estado = True)
+      ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos = plan_activo, cuota_pagada = True).order_by('numero_cuota').last()
+      con_exito = None
+      nuevo_saldo = 0
+
+      if ultima_cuota_pagada:
+        # si el abono es mayor que el saldo
+        if float(abono) <= float(ultima_cuota_pagada.amortizacion):
+          nuevo_saldo = float(ultima_cuota_pagada.amortizacion) - float(abono)
+          con_exito = True
+        else:
+          con_exito = False
+      else:
+        if not plan_activo.saldo_deuda:
           monto_lotes = 0
-          for lote in cuota.plan_pagos.contrato.lotes.all():
+          for lote in contrato.lotes.all():
             monto_lotes += float(lote.precio)
 
-          amor = monto_lotes - float(cuota.plan_pagos.contrato.prima)
+          monto_lotes -= float(contrato.prima)
         else:
-          # Al no haber ultima cuota pagada y el plan tenga saldo_deuda, significa que es un plan nuevo que
-          # ...arrastro el saldo de la deuda pendiente en el plan anterior y se usa para mostrarlo al usuario
-          # ...cuando quiera hacerse otro abono (un plan nuevo)
-          amor = cuota.plan_pagos.saldo_deuda
+          monto_lotes = float(plan_activo.saldo_deuda)
 
-      return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(amor), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
-      #return JsonResponse({'con_exito': True, 'msg': 'Puede realizar abonos', 'tasa': float(cuota.plan_pagos.contrato.tasa.strip('%')) / 100, 'saldo_pendiente': 'L{:,}'.format(cuota.plan_pagos.saldo_deuda), 'id_contrato': cuota.plan_pagos.contrato.id, 'cliente': str(cuota.plan_pagos.contrato.cliente)})
+        if float(abono) <= monto_lotes:
+          nuevo_saldo = monto_lotes - float(abono)
+          con_exito = True
+        else:
+          con_exito = False
 
-  elif proceso == 'recalcular-deuda':
-    contrato = Contrato.objects.get(pk=id)
-    plan_activo = PlanPagos.objects.get(contrato = contrato, estado = True)
-    ultima_cuota_pagada = DetallePlanPagos.objects.filter(plan_pagos = plan_activo, cuota_pagada = True).order_by('numero_cuota').last()
-    con_exito = None
-    nuevo_saldo = 0
+      return JsonResponse({'con_exito': con_exito, 'nuevo_saldo_float': float(abono), 'id_contrato': contrato.id, 'nuevo_saldo': '{:,}'.format(round(nuevo_saldo, 2))})
 
-    if ultima_cuota_pagada:
-      # si el abono es mayor que el saldo
-      if float(abono) <= float(ultima_cuota_pagada.amortizacion):
-        nuevo_saldo = float(ultima_cuota_pagada.amortizacion) - float(abono)
-        con_exito = True
-      else:
-        con_exito = False
-    else:
-      if not plan_activo.saldo_deuda:
-        monto_lotes = 0
-        for lote in contrato.lotes.all():
-          monto_lotes += float(lote.precio)
+    elif proceso == 'crear-plan':
+      contrato = Contrato.objects.get(pk=id)
+      plan_activo = PlanPagos.objects.get(contrato = contrato, estado = True)
+      plan_activo.estado = False
+      plan_activo.save()
 
-        monto_lotes -= float(contrato.prima)
-      else:
-        monto_lotes = float(plan_activo.saldo_deuda)
-
-      if float(abono) <= monto_lotes:
-        nuevo_saldo = monto_lotes - float(abono)
-        con_exito = True
-      else:
-        con_exito = False
-
-    return JsonResponse({'con_exito': con_exito, 'nuevo_saldo_float': float(abono), 'id_contrato': contrato.id, 'nuevo_saldo': '{:,}'.format(round(nuevo_saldo, 2))})
-
-  elif proceso == 'crear-plan':
-    contrato = Contrato.objects.get(pk=id)
-    plan_activo = PlanPagos.objects.get(contrato = contrato, estado = True)
-    plan_activo.estado = False
-    plan_activo.save()
-
-    # crear nuevo plan
-    plan_nuevo = PlanPagos.objects.create(
-      numero = plan_activo.numero + 1,
-      contrato = contrato,
-      abono = abono,
-      meses = plazo,
-      saldo_deuda = float(saldo) - float(abono),
-      estado = True,
-      cuota = cuota
-    )
-
-    hoy = datetime.now()
-
-    # Fecha 5 del mes en que se está creando el nuevo plan
-    mes_dia_cinco = datetime(hoy.year, hoy.month, 5)
-
-    # dias del mes actual (mes en que se registra el plan)
-    dias_mes_actual = calendar.monthrange(mes_dia_cinco.year, mes_dia_cinco.month)[1]
-
-    # Fecha 5 del siguiente mes
-    # Este mes corresponde a la primera cuota, pero tiene hasta el 5 del siguiente para pagar
-    fecha_maxima_pago = mes_dia_cinco + timedelta(days=dias_mes_actual)
-
-    tasa = float(contrato.tasa.strip('%')) / 100 / 12
-    monto = float(plan_nuevo.saldo_deuda)
-    cuota = float(cuota)
-
-    for i in range(1, int(plazo) + 1):
-      intereses = monto * tasa
-      capital = cuota - intereses
-      monto = monto - capital
-
-      c = DetallePlanPagos.objects.create(
-        plan_pagos = plan_nuevo,
-        numero_cuota = i,
-        cuota_capital = capital,
-        cuota_intereses = intereses,
-        amortizacion = monto,
-        fecha_maxima_pago = fecha_maxima_pago
+      # crear nuevo plan
+      plan_nuevo = PlanPagos.objects.create(
+        numero = plan_activo.numero + 1,
+        contrato = contrato,
+        abono = abono,
+        meses = plazo,
+        saldo_deuda = float(saldo) - float(abono),
+        estado = True,
+        cuota = cuota
       )
 
-      dias_mes_siguiente = calendar.monthrange(fecha_maxima_pago.year, fecha_maxima_pago.month)[1]
+      hoy = datetime.now()
+
+      # Fecha 5 del mes en que se está creando el nuevo plan
+      mes_dia_cinco = datetime(hoy.year, hoy.month, 5)
+
+      # dias del mes actual (mes en que se registra el plan)
+      dias_mes_actual = calendar.monthrange(mes_dia_cinco.year, mes_dia_cinco.month)[1]
 
       # Fecha 5 del siguiente mes
       # Este mes corresponde a la primera cuota, pero tiene hasta el 5 del siguiente para pagar
-      fecha_maxima_pago = fecha_maxima_pago + timedelta(days=dias_mes_siguiente)
+      fecha_maxima_pago = mes_dia_cinco + timedelta(days=dias_mes_actual)
 
-    url_detalle_plan = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
+      tasa = float(contrato.tasa.strip('%')) / 100 / 12
+      monto = float(plan_nuevo.saldo_deuda)
+      cuota = float(cuota)
 
-    return JsonResponse({'url': url_detalle_plan, 'msg': 'Se ha creado un nuevo plan de pagos'})
+      for i in range(1, int(plazo) + 1):
+        intereses = monto * tasa
+        capital = cuota - intereses
+        monto = monto - capital
+
+        c = DetallePlanPagos.objects.create(
+          plan_pagos = plan_nuevo,
+          numero_cuota = i,
+          cuota_capital = capital,
+          cuota_intereses = intereses,
+          amortizacion = monto,
+          fecha_maxima_pago = fecha_maxima_pago
+        )
+
+        dias_mes_siguiente = calendar.monthrange(fecha_maxima_pago.year, fecha_maxima_pago.month)[1]
+
+        # Fecha 5 del siguiente mes
+        # Este mes corresponde a la primera cuota, pero tiene hasta el 5 del siguiente para pagar
+        fecha_maxima_pago = fecha_maxima_pago + timedelta(days=dias_mes_siguiente)
+
+      url_detalle_plan = reverse('pagos:detalle_plan_pagos', args=[contrato.id])
+
+      return JsonResponse({'url': url_detalle_plan, 'msg': 'Se ha creado un nuevo plan de pagos'})
 
 @login_required()
 def cancelar_deuda(request):
