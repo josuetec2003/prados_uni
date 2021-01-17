@@ -107,7 +107,7 @@ $(function () {
         notify('success', respuesta.msg);
 
         setTimeout(function () {
-          $('#pagos-a-realizar').slideUp().empty().html(respuesta.html).slideDown();
+          $('#pagos-a-realizar').fadeOut().empty().html(respuesta.html).fadeIn();
         }, 1500);
       }
     }, 'json');
@@ -128,10 +128,17 @@ $(function () {
         $('#saldo-pendiente').val(respuesta.saldo_pendiente);
         $('#tasa-contrato').val(respuesta.tasa);
         $('#modal-abono').modal();
-        $('#txt-abono').focus();
+        $('#nueva-deuda').val('');
+        $('#nuevo-plazo').val('');
+        $('#nueva-cuota').val('');
+        $('#txt-abono').val('');
       }
     }, 'json');
   });
+
+  $('body').on('shown.bs.modal', '#modal-abono', function () {
+      $('input#txt-abono', this).focus();
+  })
 
   $('#btn-recalcular-id').on('click', function () {
     var id = $(this).attr('data-contrato-id');
@@ -146,17 +153,64 @@ $(function () {
     }
 
     $.get(url, {'id': id, 'abono': abono, 'proceso': 'recalcular-deuda'}, function (respuesta) {
-      $('#nueva-deuda').val(respuesta.nuevo_saldo);
-      $('#nuevo-plazo').focus();
+      console.log(respuesta.con_exito);
+      if (respuesta.con_exito)
+      {
+        $('#nueva-deuda').val(respuesta.nuevo_saldo);
+
+        if (respuesta.nuevo_saldo == '0.0')
+        {
+          $('#btn-cancelar-deuda')
+            .removeAttr('disabled')
+            .attr('data-contrato-id', respuesta.id_contrato)
+            .attr('data-saldo-float', respuesta.nuevo_saldo_float);
+
+          $('#btn-crear-plan-nuevo').attr('disabled', 'disabled');
+        } else {
+          $('#nuevo-plazo').focus();
+          $('#btn-cancelar-deuda').attr('disabled', 'disabled');
+          $('#btn-crear-plan-nuevo').removeAttr('disabled');
+        }
+      } else {
+        $('#nueva-deuda').val('');
+        notify('warn', 'El abono no puede ser mayor al saldo');
+        $('#btn-cancelar-deuda').attr('disabled', 'disabled');
+        $('#btn-crear-plan-nuevo').removeAttr('disabled');
+
+      }
     }, 'json');
   });
 
+  $('#btn-cancelar-deuda').on('click', function () {
+    if (!confirm('Confirma la cancelación de la deuda?')) return false;
+
+    var id = $(this).data('contrato-id');
+    var url = $(this).data('url');
+    var saldo_restante = $(this).data('saldo-float');
+
+    $.get(url, {'id': id, 'saldo_restante': saldo_restante}, function (respuesta) {
+      notify('success', respuesta.msg);
+
+      setTimeout(function () {
+        location.href = respuesta.url;
+      }, 1500);
+    }, 'json');
+
+  })
+
   $('#btn-nueva-cuota').on('click', function () {
     var nuevo_monto = $('#nueva-deuda').val();
-    var tasa = parseFloat($('#tasa-contrato').val()) / 12;
+    var tasa = Number($('#tasa-contrato').val()) / 12;
     var nuevo_plazo = $('#nuevo-plazo').val();
     var tipo_plazo = $('#tipo-plazo').val();
     var abono = $('#txt-abono').val();
+
+    if (nuevo_monto == '')
+    {
+      notify('warn', 'Recalcule la deuda primero');
+      $('#txt-abono').focus();
+      return false;
+    }
 
     if (abono == '')
     {
@@ -173,17 +227,16 @@ $(function () {
     }
 
     if (tipo_plazo == 'anios')
-      nuevo_plazo = parseInt(nuevo_plazo) * 12;
+      nuevo_plazo = Number(nuevo_plazo) * 12;
     else
-      nuevo_plazo = parseInt(nuevo_plazo);
+      nuevo_plazo = Number(nuevo_plazo);
 
-    nuevo_monto = parseFloat(nuevo_monto.replace(",", ""))
+    nuevo_monto = Number(nuevo_monto.replace(/,/g, ''))
 
-    var cuota = (nuevo_monto * tasa) / (1 - Math.pow(1 + tasa, -nuevo_plazo));
-    $('#nueva-cuota').val(cuota.toLocaleString(undefined, {maximumFractionDigits: 2}));
+    var cuota = (nuevo_monto * tasa) / (1 - Math.pow(1 + tasa, -nuevo_plazo));  
+    $('#nueva-cuota').val(formatNumber(cuota.toFixed(2)));
 
     return false;
-
   });
 
   $('#btn-filtrar-pagos').on('click', function () {
@@ -195,6 +248,7 @@ $(function () {
   });
 
   $('#btn-crear-plan-nuevo').on('click', function () {
+    var $me = $(this);
     var abono = $('#txt-abono').val();
     var nuevo_plazo = $('#nuevo-plazo').val();
     var tipo_plazo = $('#tipo-plazo').val();
@@ -223,9 +277,9 @@ $(function () {
     else
       nuevo_plazo = parseInt(nuevo_plazo);
 
-    abono = parseFloat(abono)
-    nueva_cuota = parseFloat(nueva_cuota.replace(",", ""))
-    saldo_pendiente = parseFloat(saldo_pendiente.replace(",", "").replace("L", ""))
+    abono = Number(abono)
+    nueva_cuota = Number(nueva_cuota.replace(/,/g, ''))
+    saldo_pendiente = Number(saldo_pendiente.replace(/,/g, '').replace("L", ""))
 
     console.log('Abono:', abono);
     console.log('Plazo:', nuevo_plazo);
@@ -240,6 +294,7 @@ $(function () {
       'proceso': 'crear-plan'
     };
 
+    $me.attr('disabled', true);
     $.get(url, ctx, function (respuesta) {
       notify('success', respuesta.msg);
 
@@ -247,8 +302,6 @@ $(function () {
         location.href = respuesta.url;
       }, 1500);
     }, 'json');
-
-
 
     return false;
   });
@@ -260,6 +313,19 @@ function notify (style, msg)
   $.notify.defaults({ className: style });
   $.notify(msg, {position: 'bottom'});
 }
+
+function formatNumber (num)
+{
+  return num.toString().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,')
+}
+
+/*
+ *   Prados Universitarios
+ *   Josué Alfredo Alvarez (Developer)
+ *   josuetec2003@gmail.com
+ *   +504 9797-8830
+ *   instagram.com/josuetec2003
+ */
 
 
 
