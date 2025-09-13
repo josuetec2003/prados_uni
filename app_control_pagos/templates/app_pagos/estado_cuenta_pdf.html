@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'control_pagos/bootstrap/css/bootstrap.css' %}">
+  <style>
+    .table-font-small {font-size: 0.8em}
+    p {margin-bottom: 0;}
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <a class="btn btn-primary" href="#" onclick="HTMLtoPDF('{{ contrato.cliente }}')">Descargar PDF</a>
+    <a class="btn btn-success" href="{% url 'pagos:detalle_plan_pagos' idc %}">Regresar</a>
+    
+    <div id="HTMLtoPDF">
+      <h3 class="text-center">Prados Universitarios</h3>
+      <h4 class="text-center">Estado de cuenta</h4>
+
+      <p class="text-center" style="border-bottom: 1px solid #999; border-top: 1px solid #999">
+        Cliente: {{ contrato.cliente }} - Lotes: {{ contrato.lotes_en_contrato }} - Fecha adquirido: {{ adquirido_en }}
+      </p>
+      <p class="text-center" style="margin-bottom: 10px; border-bottom: 1px solid #999;">
+        Estado del contrato: {% if contrato.estado %}Vigente{% else %}Finalizado{% endif %}
+      </p>
+
+      {{ html|safe }}
+    </div>
+  </div>
+
+  <script src="{% static 'control_pagos/js/jquery-3.3.1.min.js' %}"></script>
+  <script src="{% static 'control_pagos/plugins/jspdf.js' %}"></script>
+  <script src="{% static 'control_pagos/plugins/jspdf.plugin.autotable.js' %}"></script>
+  <script src="{% static 'control_pagos/plugins/pdfFromHTML.js' %}"></script>
+</body>
+</html>

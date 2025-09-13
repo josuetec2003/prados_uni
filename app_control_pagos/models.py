@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 class Sector(models.Model):
   descripcion = models.CharField('Descripción', max_length=15)
@@ -35,6 +36,9 @@ class Cliente(models.Model):
 
   def __str__(self):
     return '{} {}'.format(self.nombre, self.apellido)
+  
+  class Meta:
+    ordering = ['nombre', 'apellido']
 
 class Periodo(models.Model):
   cantidad_anios = models.IntegerField()
@@ -63,6 +67,11 @@ class Contrato(models.Model):
   tasa = models.CharField(max_length=3, null=True, blank=True)
   estado = models.BooleanField(default=True) # False: Contrato pagado, True: En estado pagando
   anulado = models.BooleanField(default=False) # True: Se anula por falta de pago
+
+  @property
+  def lotes_en_contrato(self):
+    y = [f'Lote {x.numero} ({x.sector})' for x in self.lotes.all()]
+    return ', '.join(y)
 
   @property
   def monto_total_lotes(self):
@@ -114,6 +123,15 @@ class DetallePlanPagos(models.Model):
   fecha_maxima_pago = models.DateField()
   fecha_pago = models.DateTimeField(null=True, blank=True)
   cuota_pagada = models.BooleanField(default=False)
+  fecha_registro = models.DateTimeField(auto_now_add=True)
+  abono_a_capital = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+  fecha_abono_capital = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+  abono_registrado_por = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True)
+  nuevo_saldo = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+  pago_intereses = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+  pago_capital = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
+  activo = models.BooleanField(default=True)
+
 
   def __str__(self):
     return 'Plan #{} = Cuota #{} > Amortizacion: {}: Pagada: {}'.format(self.plan_pagos.numero, self.numero_cuota, self.amortizacion, self.cuota_pagada)

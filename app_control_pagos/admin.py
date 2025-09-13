@@ -28,7 +28,12 @@ class PlanPagosAdmin(admin.ModelAdmin):
 
 admin.site.register(Sector)
 admin.site.register(EstadoLote)
-admin.site.register(Lote)
+
+@admin.register(Lote)
+class LoteAdmin(admin.ModelAdmin):
+  list_display = [field.name for field in Lote._meta.fields]
+  list_editable = ('estado',)
+
 admin.site.register(Cliente)
 admin.site.register(Periodo)
 

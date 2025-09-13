@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load myfilters %}
 
 {% block title_content %}
 Plan de pagos | Contrato #{{ contrato.id }}
@@ -13,6 +14,7 @@ Plan de pagos | Contrato #{{ contrato.id }}
       <div class="col-md-6"><h3 class="mb-3">Información</h3></div>
       <div class="col-md-6 text-right">
         <a href="{% url 'pagos:contrato' 'todos' %}" class="btn btn-success btn-sm">← Regresar</a>
+        <a href="{% url 'pagos:estado_cuenta_view' contrato.id %}" class="btn btn-primary btn-sm">EC</a>
       </div>
     </div>
 
@@ -97,14 +99,19 @@ Plan de pagos | Contrato #{{ contrato.id }}
     <div class="tab-content mt-3" id="nav-tabContent">
       <div class="tab-pane fade show active" id="nav-plan-activo" role="tabpanel" aria-labelledby="nav-plan-activo-tab">
         {% if detalle %}
+          {% if plan.abono %}
+          <p>Abono al plan: L. {{ plan.abono|floatformat:2|intcomma }}</p>
+          {% endif %}
+        
         <table class="table table-sm table-bordered table-font-small">
           <thead class="thead-dark">
             <tr>
-              <th class="text-center">Cuota</th>
-              <th class="text-center">Fecha máxima pago</th>
-              <th class="text-center">Pago capital</th>
-              <th class="text-center">Pago intereses</th>
-              <th class="text-center">Amortización</th>
+              <th class="text-center"># Cuota</th>
+              <th class="text-center">Fec. Cuota/Pago</th>
+              <th class="text-center">Abono Cap.</th>
+              <th class="text-center">Pago Cap.</th>
+              <th class="text-center">Pago Int.</th>
+              <th class="text-center">Amort.</th>
               <th class="text-center">Estado</th>
             </tr>
           </thead>
@@ -113,10 +120,38 @@ Plan de pagos | Contrato #{{ contrato.id }}
             {% for cuota in detalle %}
               <tr>
                 <td class="text-center">{{ cuota.numero_cuota }}</td>
-                <td>{{ cuota.fecha_maxima_pago }}</td>
-                <td class="text-right">L{{ cuota.cuota_capital|floatformat:2|intcomma }}</td>
-                <td class="text-right">L{{ cuota.cuota_intereses|floatformat:2|intcomma }}</td>
-                <td class="text-right">L{{ cuota.amortizacion|floatformat:2|intcomma }}</td>
+                <td>
+                  {{ cuota.fecha_maxima_pago|fecha_corta }} / {{ cuota.fecha_pago|fecha_corta }}
+                </td>
+
+                <td class="text-right">
+                  L.{{ cuota.abono_a_capital|floatformat:2|intcomma }}
+                </td>
+
+                <td class="text-right">
+                {% if cuota.pago_capital %}
+                  L{{ cuota.pago_capital|floatformat:2|intcomma }}
+                {% else %}
+                  L{{ cuota.cuota_capital|floatformat:2|intcomma }}
+                {% endif %}
+                </td>
+
+                <td class="text-right">
+                {% if cuota.pago_intereses %}
+                  L{{ cuota.pago_intereses|floatformat:2|intcomma }}
+                {% else %}
+                  L{{ cuota.cuota_intereses|floatformat:2|intcomma }}
+                {% endif %}
+                </td>
+
+                <td class="text-right">
+                {% if cuota.nuevo_saldo or cuota.pago_intereses %}
+                  L{{ cuota.nuevo_saldo|floatformat:2|intcomma }}
+                {% else %}
+                  L{{ cuota.amortizacion|floatformat:2|intcomma }}
+                {% endif %}
+                </td>
+
                 <td class="text-center">
                   {% if cuota.cuota_pagada %}
                   <span class="badge badge-success">Pagada</span>
@@ -145,22 +180,66 @@ Plan de pagos | Contrato #{{ contrato.id }}
             <table class="table table-sm table-bordered table-font-small">
               <thead class="thead-dark">
                 <tr>
-                  <th class="text-center">Cuota</th>
-                  <th class="text-center">Fecha máxima pago</th>
-                  <th class="text-center">Pago capital</th>
-                  <th class="text-center">Pago intereses</th>
-                  <th class="text-center">Amortización</th>
+                  <th class="text-center"># Cuota</th>
+                  <th class="text-center">Fecha Cuota/Pago</th>
+                  <th class="text-center">Abono Cap.</th>
+                  <th class="text-center">Pago Cap.</th>
+                  <th class="text-center">Pago Int.</th>
+                  <th class="text-center">Amort.</th>
                   <th class="text-center">Estado</th>
                 </tr>
               </thead>
               <tbody>
-                {% for cuota in plan.detalleplanpagos_set.all %}
+                {% for cuota in plan.detalleplanpagos_set.all|cuotas_activas %}
                   <tr>
                     <td class="text-center">{{ cuota.numero_cuota }}</td>
-                    <td>{{ cuota.fecha_maxima_pago }}</td>
-                    <td class="text-right">L{{ cuota.cuota_capital|floatformat:2|intcomma }}</td>
-                    <td class="text-right">L{{ cuota.cuota_intereses|floatformat:2|intcomma }}</td>
-                    <td class="text-right">L{{ cuota.amortizacion|floatformat:2|intcomma }}</td>
+                    
+                    <td>
+                      {{ cuota.fecha_maxima_pago|fecha_corta }} / {{ cuota.fecha_pago|fecha_corta }}
+                    </td>
+
+                    <td class="text-right">
+                      {% if forloop.last %}
+                        {% if cuota.abono_a_capital %}
+                          L{{ cuota.abono_a_capital|floatformat:2|intcomma }}
+                        {% elif cuota.plan_pagos.monto_saldo_cancelado %}
+                          L{{ cuota.plan_pagos.monto_saldo_cancelado|floatformat:2|intcomma }}
+                        {% else %}
+                          -
+                        {% endif %}
+                      {% else %}
+                        {% if cuota.abono_a_capital %}
+                          L{{ cuota.abono_a_capital|floatformat:2|intcomma }}
+                        {% else %}
+                          -
+                        {% endif %}
+                      {% endif %}
+                    </td>
+
+                    <td class="text-right">
+                    {% if cuota.pago_intereses %}
+                      L{{ cuota.pago_capital|floatformat:2|intcomma }}
+                    {% else %}
+                      L{{ cuota.cuota_capital|floatformat:2|intcomma }}
+                    {% endif %}
+                    </td>
+
+                    <td class="text-right">
+                    {% if cuota.pago_intereses %}
+                      L{{ cuota.pago_intereses|floatformat:2|intcomma }}
+                    {% else %}
+                      L{{ cuota.cuota_intereses|floatformat:2|intcomma }}
+                    {% endif %}
+                    </td>
+
+                    <td class="text-right">
+                    {% if cuota.pago_intereses %}
+                      L{{ cuota.nuevo_saldo|floatformat:2|intcomma }}
+                    {% else %}
+                      L{{ cuota.amortizacion|floatformat:2|intcomma }}
+                    {% endif %}
+                    </td>
+
                     <td class="text-center">
                       {% if cuota.cuota_pagada %}
                       <span class="badge badge-success">Pagada</span>
@@ -199,8 +278,16 @@ Plan de pagos | Contrato #{{ contrato.id }}
             {% for abono in abonos %}
             <tr>
               <td>Plan #{{ abono.numero }}</td>
-              <td>Abono a capital</td>
+              <td>Abono a capital (plan nuevo)</td>
               <td class="text-right">L{{ abono.abono|floatformat:2|intcomma }}</td>
+            </tr>
+            {% endfor %}
+
+            {% for abono in abonos_mismo_plan %}
+            <tr>
+              <td>Plan #{{ abono.plan_pagos.numero }}</td>
+              <td>Abono a capital (misma cuota)</td>
+              <td class="text-right">L{{ abono.abono_a_capital|floatformat:2|intcomma }}</td>
             </tr>
             {% endfor %}
 
@@ -208,7 +295,13 @@ Plan de pagos | Contrato #{{ contrato.id }}
             <tr>
               <td>Plan #{{ cuota.plan_pagos.numero }}</td>
               <td>Cuota #{{ cuota.numero_cuota }}</td>
-              <td class="text-right">L{{ cuota.plan_pagos.cuota|floatformat:2|intcomma }}</td>
+              <td class="text-right">
+                {% if cuota.pago_intereses %}
+                L{{ cuota.pago_intereses|sum_value:cuota.pago_capital|floatformat:2|intcomma }}
+                {% else %}
+                L{{ cuota.plan_pagos.cuota|floatformat:2|intcomma }}
+                {% endif %}
+              </td>
             </tr>
             {% endfor %}
 

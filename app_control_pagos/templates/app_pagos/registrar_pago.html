@@ -25,7 +25,9 @@ Registrar pago
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Contrato #<span id="contrato-num"></span></h5>
+        <h5 class="modal-title" id="exampleModalLabel">
+          Contrato #<span id="contrato-num"></span> (<span id="valor-cuota"></span>)
+        </h5>
         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -57,32 +59,45 @@ Registrar pago
         </div>
 
         <div class="form-group row">
-          <input type="hidden" id="tasa-contrato">
-          <label for="nuevo-plazo" class="col-sm-3 col-form-label">Nuevo plazo</label>
-          <div class="col-sm-5">
-            <input type="number" class="form-control" id="nuevo-plazo">
-          </div>
-          <div class="col-sm-4">
-            <select id="tipo-plazo" class="form-control">
-              <option value="anios">Años</option>
-              <option value="meses">Meses</option>
+          <label for="nueva-deuda" class="col-sm-3 col-form-label">Tipo Cálculo</label>
+          <div class="col-sm-9">
+            <select id="cbo-tipo-calculo" class="form-control">
+              <option value="">Seleccione tipo de cálculo</option>
+              <option value="1">Mantener valor de la cuota</option>
+              <option value="2">Crear nuevo plan de pagos</option>
             </select>
           </div>
         </div>
 
-        <div class="form-group row">
-          <label for="nueva-cuota" class="col-sm-3 col-form-label">Nueva cuota</label>
-          <div class="col-sm-5">
-            <input type="text" class="form-control" id="nueva-cuota" readonly="readonly">
+        <div id="campos-nuevo-plan" style="display: none">
+          <div class="form-group row">
+            <input type="hidden" id="tasa-contrato">
+            <label for="nuevo-plazo" class="col-sm-3 col-form-label">Nuevo plazo</label>
+            <div class="col-sm-5">
+              <input type="number" class="form-control" id="nuevo-plazo">
+            </div>
+            <div class="col-sm-4">
+              <select id="tipo-plazo" class="form-control">
+                <option value="anios">Años</option>
+                <option value="meses">Meses</option>
+              </select>
+            </div>
           </div>
-          <div class="col-sm-4">
-            <button type="button" id="btn-nueva-cuota" class="btn btn-secondary btn-block" data-dismiss="modal">
-              <small>Recalcular cuota</small>
-            </button>
+
+          <div class="form-group row">
+            <label for="nueva-cuota" class="col-sm-3 col-form-label">Nueva cuota</label>
+            <div class="col-sm-5">
+              <input type="text" class="form-control" id="nueva-cuota" readonly="readonly">
+            </div>
+            <div class="col-sm-4">
+              <button type="button" id="btn-nueva-cuota" class="btn btn-secondary btn-block" data-dismiss="modal">
+                <small>Recalcular cuota</small>
+              </button>
+            </div>
           </div>
         </div>
-
       </div>
+
       <div class="modal-footer">
         <button type="button"
                 data-url="{% url 'pagos:cancelar_deuda' %}"
@@ -91,7 +106,9 @@ Registrar pago
         </button>
 
         <button type="button"
+                style="display: none"
                 data-url="{% url 'pagos:realizar_abono' %}"
+                data-tipo-calculo=""
                 class="btn btn-primary" id="btn-crear-plan-nuevo">
           Crear plan de pagos
         </button>
