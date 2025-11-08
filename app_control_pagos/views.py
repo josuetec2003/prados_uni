@@ -364,6 +364,7 @@ def registrar_pago(request):
   # clientes = Cliente.objects.all().order_by('nombre')
   contratos = Contrato.objects.filter(estado = True)
   clientes = set([c.cliente for c in contratos])
+  clientes = sorted(clientes, key=lambda x: x.nombre)
 
   ctx = {
     'clientes': clientes
@@ -1130,27 +1131,18 @@ def estado_cuenta_view(request, idc):
 
       print(i, cuotas.count(), i == cuotas.count(), abono)
 
-      if cuota.pago_intereses:
-        filas += f'''
+      _pago_capital = cuota.pago_capital if cuota.pago_capital else cuota.cuota_capital
+      _pago_interes = cuota.pago_intereses if cuota.pago_intereses else cuota.cuota_intereses
+      _saldo = cuota.nuevo_saldo if cuota.nuevo_saldo or cuota.pago_intereses else cuota.amortizacion
+
+      filas += f'''
           <tr>
             <td class='text-center'>{cuota.numero_cuota}</td>
             <td class='text-center'>{cuota.fecha_maxima_pago.strftime('%d.%m.%y')}/{cuota.fecha_pago.strftime('%d.%m.%y') if cuota.fecha_pago else 'N.A'}</td>
             <td class='text-right'>L. {abono:,}</td>
-            <td class='text-right'>L. {cuota.pago_capital:,}</td>
-            <td class='text-right'>L. {cuota.pago_intereses:,}</td>
-            <td class='text-right'>L. {cuota.nuevo_saldo:,}</td>
-            <td class='text-center'>{"Pag." if cuota.cuota_pagada else "-"}</td>
-          </tr>
-        '''
-      else:
-        filas += f'''
-          <tr>
-            <td class='text-center'>{cuota.numero_cuota}</td>
-            <td class='text-center'>{cuota.fecha_maxima_pago.strftime('%d.%m.%y')}/{cuota.fecha_pago.strftime('%d.%m.%y') if cuota.fecha_pago else 'N.A'}</td>
-            <td class='text-right'>L. {abono:,}</td>
-            <td class='text-right'>L. {cuota.cuota_capital:,}</td>
-            <td class='text-right'>L. {cuota.cuota_intereses:,}</td>
-            <td class='text-right'>L. {cuota.amortizacion:,}</td>
+            <td class='text-right'>L. {_pago_capital:,}</td>
+            <td class='text-right'>L. {_pago_interes:,}</td>
+            <td class='text-right'>L. {_saldo:,}</td>
             <td class='text-center'>{"Pag." if cuota.cuota_pagada else "-"}</td>
           </tr>
         '''

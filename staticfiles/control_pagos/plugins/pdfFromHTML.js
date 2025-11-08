@@ -1,7 +1,11 @@
 function HTMLtoPDF(nombre){
+  nombre = nombre.replace(" ", "-");
+  nombre = nombre.replace(" ", "-");
   nombre = nombre.replace(" ", "-").toLowerCase();
 
   var pdf = new jsPDF('p', 'pt', 'letter');
+
+  pdf.setFontSize(8);
 
   source = $('#HTMLtoPDF')[0];
 
@@ -12,9 +16,10 @@ function HTMLtoPDF(nombre){
   }
 
   margins = {
-    top: 50,
-    left: 60,
-    width: 545
+    top: 30,
+    left: 30,
+    right: 30,
+    width: 600
   };
 
   pdf.fromHTML(

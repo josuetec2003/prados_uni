@@ -98,7 +98,9 @@ $(function () {
 
   $(document).on('click', '.btn-realizar-pago', function () {
     if (!confirm('Confirme el pago de la cuota'))
+    {
       return false;
+    }
 
     $(this).attr('disabled', 'disabled');
     var id = $(this).attr('data-cuota-id');

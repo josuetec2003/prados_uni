@@ -97,11 +97,17 @@ $(function () {
   });
 
   $(document).on('click', '.btn-realizar-pago', function () {
+    if (!confirm('Confirme el pago de la cuota'))
+    {
+      return false;
+    }
+
     $(this).attr('disabled', 'disabled');
     var id = $(this).attr('data-cuota-id');
     var url = $(this).attr('data-url');
+    var fechaPago = $(`#pagos-a-realizar #fecha-pago-${id}`).val();
 
-    $.get(url, {'id': id}, function (respuesta) {
+    $.get(url, {'id': id, fechaPago: fechaPago}, function (respuesta) {
       if (respuesta.con_exito)
       {
         notify('success', respuesta.msg);
