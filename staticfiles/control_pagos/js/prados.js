@@ -128,6 +128,7 @@ $(function () {
         notify('warn', respuesta.msg);
       else
       {
+        console.log(respuesta)
         $('#btn-recalcular-id').attr('data-contrato-id', respuesta.id_contrato);
         $('#btn-crear-plan-nuevo').attr('data-contrato-id', respuesta.id_contrato);
         $('#contrato-num').text(respuesta.id_contrato + ' - ' + respuesta.cliente);
@@ -138,6 +139,7 @@ $(function () {
         $('#nuevo-plazo').val('');
         $('#nueva-cuota').val('');
         $('#txt-abono').val('');
+        $('#valor-cuota').text(`L${respuesta.cuota.toLocaleString()}`);
       }
     }, 'json');
   });
@@ -262,7 +264,7 @@ $(function () {
     var saldo_pendiente = $('#saldo-pendiente').val();
     var url = $(this).data('url');
     var contrato_id = $(this).data('contrato-id');
-
+    var tipo_calculo = $me.data('tipo-calculo');
 
     if (abono == '')
     {
@@ -271,46 +273,92 @@ $(function () {
       return false;
     }
 
-    if (nueva_cuota == '')
-    {
-      notify('warn', 'Recalcule la cuota');
-      $('#nuevo-plazo').focus();
-      return false;
+    // Si el tipo es 1: Mantener la cuota, el calculo sera otro
+    if (tipo_calculo == '1') {
+      var ctx = {
+        'abono': Number(abono),
+        'id': contrato_id,
+        'proceso': 'abonar-a-capital'
+      };
+  
+      $me.attr('disabled', true);
+      $.get(url, ctx, function (respuesta) {
+
+        if (respuesta.ok) {
+          notify('success', respuesta.msg);
+          
+          setTimeout(function () {
+            location.href = respuesta.url;
+          }, 1500);
+        } else {
+          notify('error', respuesta.msg);
+          $me.removeAttr('disabled');
+        }
+      }, 'json');
+    }
+    else {
+      if (nueva_cuota == '')
+      {
+        notify('warn', 'Recalcule la cuota');
+        $('#nuevo-plazo').focus();
+        return false;
+      }
+  
+      if (tipo_plazo == 'anios')
+        nuevo_plazo = parseInt(nuevo_plazo) * 12;
+      else
+        nuevo_plazo = parseInt(nuevo_plazo);
+  
+      abono = Number(abono)
+      nueva_cuota = Number(nueva_cuota.replace(/,/g, ''))
+      saldo_pendiente = Number(saldo_pendiente.replace(/,/g, '').replace("L", ""))
+  
+      console.log('Abono:', abono);
+      console.log('Plazo:', nuevo_plazo);
+      console.log('Cuota:', nueva_cuota);
+  
+      var ctx = {
+        'abono': abono,
+        'plazo': nuevo_plazo,
+        'cuota': nueva_cuota,
+        'id': contrato_id,
+        'saldo': saldo_pendiente,
+        'proceso': 'crear-plan'
+      };
+  
+      $me.attr('disabled', true);
+      $.get(url, ctx, function (respuesta) {
+        notify('success', respuesta.msg);
+  
+        setTimeout(function () {
+          location.href = respuesta.url;
+        }, 1500);
+      }, 'json');
     }
 
-    if (tipo_plazo == 'anios')
-      nuevo_plazo = parseInt(nuevo_plazo) * 12;
-    else
-      nuevo_plazo = parseInt(nuevo_plazo);
-
-    abono = Number(abono)
-    nueva_cuota = Number(nueva_cuota.replace(/,/g, ''))
-    saldo_pendiente = Number(saldo_pendiente.replace(/,/g, '').replace("L", ""))
-
-    console.log('Abono:', abono);
-    console.log('Plazo:', nuevo_plazo);
-    console.log('Cuota:', nueva_cuota);
-
-    var ctx = {
-      'abono': abono,
-      'plazo': nuevo_plazo,
-      'cuota': nueva_cuota,
-      'id': contrato_id,
-      'saldo': saldo_pendiente,
-      'proceso': 'crear-plan'
-    };
-
-    $me.attr('disabled', true);
-    $.get(url, ctx, function (respuesta) {
-      notify('success', respuesta.msg);
-
-      setTimeout(function () {
-        location.href = respuesta.url;
-      }, 1500);
-    }, 'json');
 
     return false;
   });
+
+  $('#cbo-tipo-calculo').on('change', function () {
+    let tipoCalculo = $(this).val()
+
+    $('#btn-crear-plan-nuevo').attr('data-tipo-calculo', tipoCalculo)
+    if (tipoCalculo == '2') {
+      $('#campos-nuevo-plan').show();
+      $('#btn-crear-plan-nuevo').show();
+      $('#btn-crear-plan-nuevo').text('Crear plan de pagos');
+    } 
+    else if (tipoCalculo == '1') {
+      $('#campos-nuevo-plan').hide();
+      $('#btn-crear-plan-nuevo').show();
+      $('#btn-crear-plan-nuevo').text('Registrar abono');
+    }
+    else {
+      $('#btn-crear-plan-nuevo').hide();
+      $('#campos-nuevo-plan').hide();
+    }
+  })
 
 })
 
